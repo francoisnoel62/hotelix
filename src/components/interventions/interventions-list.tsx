@@ -257,14 +257,14 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                     )}
 
                     {/* Changement de statut détaillé */}
-                    {/* {canChangeStatut(intervention) && (
+                    {canChangeStatut(intervention) && (
                       <StatusCombobox
                         value={intervention.statut}
                         onValueChange={(status) => handleStatutChange(intervention.id, status)}
                         canCancel={user.role === 'MANAGER'}
                         isLoading={loadingActions[intervention.id] === 'status'}
                       />
-                    )} */}
+                    )}
                   </div>
                 </div>
               </div>
