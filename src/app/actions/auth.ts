@@ -169,6 +169,107 @@ export async function loginAction(prevState: AuthResult<UserSession> | null, for
   }
 }
 
+export async function updateProfileAction(
+  prevState: AuthResult<UserSession> | null,
+  formData: FormData
+): Promise<AuthResult<UserSession>> {
+  try {
+    const profileData = {
+      id: parseInt(formData.get('id') as string),
+      name: formData.get('name') as string || undefined,
+      email: formData.get('email') as string,
+      role: (formData.get('role') as 'MANAGER' | 'STAFF') || 'STAFF',
+      currentPassword: formData.get('currentPassword') as string || undefined,
+      newPassword: formData.get('newPassword') as string || undefined,
+    }
+
+    // Vérifier que l'utilisateur existe
+    const existingUser = await prisma.user.findUnique({
+      where: { id: profileData.id },
+      include: { hotel: true }
+    })
+
+    if (!existingUser) {
+      return {
+        success: false,
+        error: AuthError.InvalidCredentials,
+        message: 'Utilisateur non trouvé'
+      }
+    }
+
+    // Si changement de mot de passe, vérifier le mot de passe actuel
+    if (profileData.newPassword && profileData.currentPassword) {
+      const isValidPassword = await bcryptjs.compare(profileData.currentPassword, existingUser.password)
+      if (!isValidPassword) {
+        return {
+          success: false,
+          error: AuthError.InvalidCredentials,
+          message: 'Mot de passe actuel incorrect'
+        }
+      }
+    }
+
+    // Vérifier si l'email est déjà utilisé par un autre utilisateur
+    if (profileData.email !== existingUser.email) {
+      const emailExists = await prisma.user.findFirst({
+        where: {
+          email: profileData.email,
+          id: { not: profileData.id }
+        }
+      })
+
+      if (emailExists) {
+        return {
+          success: false,
+          error: AuthError.EmailTaken,
+          message: 'Un utilisateur avec cet email existe déjà'
+        }
+      }
+    }
+
+    // Préparer les données de mise à jour
+    const updateData: any = {
+      name: profileData.name,
+      email: profileData.email,
+      role: profileData.role
+    }
+
+    // Ajouter le nouveau mot de passe si fourni
+    if (profileData.newPassword) {
+      updateData.password = await bcryptjs.hash(profileData.newPassword, 12)
+    }
+
+    // Mettre à jour l'utilisateur
+    const updatedUser = await prisma.user.update({
+      where: { id: profileData.id },
+      data: updateData,
+      include: { hotel: true }
+    })
+
+    const userSession: UserSession = {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      name: updatedUser.name,
+      role: updatedUser.role,
+      hotelId: updatedUser.hotelId,
+      hotel: updatedUser.hotel
+    }
+
+    return {
+      success: true,
+      data: userSession,
+      message: 'Profil mis à jour avec succès'
+    }
+  } catch (error) {
+    console.error('Update profile action error:', error)
+    return {
+      success: false,
+      error: AuthError.DatabaseError,
+      message: 'Erreur lors de la mise à jour du profil'
+    }
+  }
+}
+
 export async function logoutAction() {
   return {
     success: true,

@@ -32,6 +32,10 @@ export default function DashboardPage() {
     }
   }
 
+  const handleProfileUpdate = (updatedUser: UserSession) => {
+    setUser(updatedUser)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -45,7 +49,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardLayout user={user} onLogout={handleLogout}>
+    <DashboardLayout user={user} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate}>
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-white rounded-lg shadow p-6">

@@ -3,13 +3,15 @@
 import { LogOut, Hotel, Users, Calendar, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UserSession } from '@/lib/types/auth'
+import { ProfileEditModal } from './profile-edit-modal'
 
 interface DashboardSidebarProps {
   user: UserSession
   onLogout: () => void
+  onProfileUpdate?: (updatedUser: UserSession) => void
 }
 
-export function DashboardSidebar({ user, onLogout }: DashboardSidebarProps) {
+export function DashboardSidebar({ user, onLogout, onProfileUpdate }: DashboardSidebarProps) {
   const menuItems = [
     { icon: Hotel, label: 'Accueil', href: '/dashboard' },
     { icon: Users, label: 'Utilisateurs', href: '/dashboard/users' },
@@ -70,8 +72,12 @@ export function DashboardSidebar({ user, onLogout }: DashboardSidebarProps) {
         </ul>
       </nav>
 
-      {/* Logout Button */}
+      {/* Profile Edit & Logout Buttons */}
       <div className="p-4 border-t bg-white">
+        <ProfileEditModal
+          user={user}
+          onProfileUpdate={onProfileUpdate || (() => {})}
+        />
         <Button
           variant="outline"
           className="w-full justify-start gap-3 h-10 px-3 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"

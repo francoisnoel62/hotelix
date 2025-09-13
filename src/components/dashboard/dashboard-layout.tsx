@@ -7,13 +7,14 @@ interface DashboardLayoutProps {
   user: UserSession
   children: React.ReactNode
   onLogout: () => void
+  onProfileUpdate?: (updatedUser: UserSession) => void
 }
 
-export function DashboardLayout({ user, children, onLogout }: DashboardLayoutProps) {
+export function DashboardLayout({ user, children, onLogout, onProfileUpdate }: DashboardLayoutProps) {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <DashboardSidebar user={user} onLogout={onLogout} />
+      <DashboardSidebar user={user} onLogout={onLogout} onProfileUpdate={onProfileUpdate} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
