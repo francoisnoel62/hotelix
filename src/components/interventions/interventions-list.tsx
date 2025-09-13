@@ -1,10 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { InterventionWithRelations, STATUT_COLORS, PRIORITE_COLORS, TechnicienOption } from '@/lib/types/intervention'
+import { InterventionWithRelations, PRIORITE_COLORS, TechnicienOption } from '@/lib/types/intervention'
 import { UserSession } from '@/lib/types/auth'
 import { updateInterventionStatut, assignerIntervention, getTechniciens } from '@/app/actions/intervention'
 import { InterventionForm } from './intervention-form'
+import { StatusCombobox } from './status-combobox'
+import { TechnicianCombobox } from './technician-combobox'
+import { QuickActionButtons } from './quick-action-buttons'
+import { useToast } from '@/components/ui/toast'
 import { StatutIntervention } from '@prisma/client'
 
 interface InterventionsListProps {
@@ -18,6 +22,8 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
   const [statutFilter, setStatutFilter] = useState<StatutIntervention | 'ALL'>('ALL')
   const [showForm, setShowForm] = useState(false)
   const [techniciens, setTechniciens] = useState<TechnicienOption[]>([])
+  const [loadingActions, setLoadingActions] = useState<{ [key: number]: 'status' | 'technician' | null }>({})
+  const { toast } = useToast()
 
   useEffect(() => {
     const loadTechniciens = async () => {
@@ -37,32 +43,48 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
   })
 
   const handleStatutChange = async (interventionId: number, nouveauStatut: StatutIntervention) => {
-    const result = await updateInterventionStatut(interventionId, nouveauStatut, user.id)
-    if (result.success) {
-      onRefresh()
-    } else {
-      alert(result.error || 'Erreur lors de la mise à jour')
+    setLoadingActions(prev => ({ ...prev, [interventionId]: 'status' }))
+    try {
+      const result = await updateInterventionStatut(interventionId, nouveauStatut, user.id)
+      if (result.success) {
+        toast({
+          variant: 'success',
+          title: 'Statut mis à jour',
+          description: result.message || `Statut changé vers ${nouveauStatut.replace('_', ' ').toLowerCase()}`
+        })
+        onRefresh()
+      } else {
+        toast({
+          variant: 'error',
+          title: 'Erreur',
+          description: result.error || 'Erreur lors de la mise à jour'
+        })
+      }
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [interventionId]: null }))
     }
   }
 
-  const handleTechnicienChange = async (interventionId: number, technicienId: string) => {
-    const technicienIdNumber = technicienId === '' ? 0 : parseInt(technicienId)
-
-    if (technicienIdNumber === 0) {
-      // Désassigner le technicien - on va créer une fonction pour ça
-      const result = await assignerIntervention(interventionId, 0, user.id)
+  const handleTechnicienChange = async (interventionId: number, technicienId: number | null) => {
+    setLoadingActions(prev => ({ ...prev, [interventionId]: 'technician' }))
+    try {
+      const result = await assignerIntervention(interventionId, technicienId || 0, user.id)
       if (result.success) {
+        toast({
+          variant: 'success',
+          title: 'Assignation mise à jour',
+          description: result.message || (technicienId ? 'Technicien assigné' : 'Intervention désassignée')
+        })
         onRefresh()
       } else {
-        alert(result.error || 'Erreur lors de la désassignation')
+        toast({
+          variant: 'error',
+          title: 'Erreur',
+          description: result.error || 'Erreur lors de l\'assignation'
+        })
       }
-    } else {
-      const result = await assignerIntervention(interventionId, technicienIdNumber, user.id)
-      if (result.success) {
-        onRefresh()
-      } else {
-        alert(result.error || 'Erreur lors de l\'assignation')
-      }
+    } finally {
+      setLoadingActions(prev => ({ ...prev, [interventionId]: null }))
     }
   }
 
@@ -76,18 +98,6 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
     }).format(new Date(date))
   }
 
-  const getStatutBadgeClass = (statut: StatutIntervention) => {
-    const color = STATUT_COLORS[statut]
-    const baseClass = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
-
-    switch (color) {
-      case 'gray': return `${baseClass} bg-gray-100 text-gray-800`
-      case 'blue': return `${baseClass} bg-blue-100 text-blue-800`
-      case 'green': return `${baseClass} bg-green-100 text-green-800`
-      case 'red': return `${baseClass} bg-red-100 text-red-800`
-      default: return `${baseClass} bg-gray-100 text-gray-800`
-    }
-  }
 
   const getPrioriteBadgeClass = (priorite: string) => {
     const baseClass = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
@@ -163,9 +173,11 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                     <h4 className="text-lg font-medium text-gray-900 truncate">
                       {intervention.titre}
                     </h4>
-                    <span className={getStatutBadgeClass(intervention.statut)}>
-                      {intervention.statut.replace('_', ' ').toLowerCase()}
-                    </span>
+                    <StatusCombobox
+                      value={intervention.statut}
+                      onValueChange={() => {}}
+                      readOnly={true}
+                    />
                     <span className={getPrioriteBadgeClass(intervention.priorite)}>
                       {intervention.priorite.toLowerCase()}
                     </span>
@@ -221,43 +233,39 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                 </div>
 
                 {/* Actions */}
-                <div className="ml-4 flex-shrink-0 space-y-2">
-                  {/* Assignation technicien (MANAGER uniquement) */}
-                  {user.role === 'MANAGER' && (
-                    <div>
-                      <select
-                        value={intervention.assigneId || ''}
-                        onChange={(e) => handleTechnicienChange(intervention.id, e.target.value)}
-                        className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
-                      >
-                        <option value="">Non assigné</option>
-                        {techniciens.map(technicien => (
-                          <option key={technicien.id} value={technicien.id}>
-                            {technicien.name || technicien.email}
-                            {technicien.specialite && ` (${technicien.specialite})`}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                <div className="ml-4 flex-shrink-0 space-y-3">
+                  {/* Boutons d'action rapide */}
+                  {canChangeStatut(intervention) && (
+                    <QuickActionButtons
+                      currentStatus={intervention.statut}
+                      onStatusChange={(status) => handleStatutChange(intervention.id, status)}
+                      canCancel={user.role === 'MANAGER'}
+                      isLoading={loadingActions[intervention.id] === 'status'}
+                    />
                   )}
 
-                  {/* Changement de statut */}
-                  {canChangeStatut(intervention) && intervention.statut !== 'TERMINEE' && (
-                    <div>
-                      <select
+                  <div className="flex items-center gap-2">
+                    {/* Assignation technicien (MANAGER uniquement) */}
+                    {user.role === 'MANAGER' && (
+                      <TechnicianCombobox
+                        technicians={techniciens}
+                        value={intervention.assigneId}
+                        onValueChange={(technicianId) => handleTechnicienChange(intervention.id, technicianId)}
+                        isLoading={loadingActions[intervention.id] === 'technician'}
+                        className="min-w-[180px]"
+                      />
+                    )}
+
+                    {/* Changement de statut détaillé */}
+                    {/* {canChangeStatut(intervention) && (
+                      <StatusCombobox
                         value={intervention.statut}
-                        onChange={(e) => handleStatutChange(intervention.id, e.target.value as StatutIntervention)}
-                        className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
-                      >
-                        <option value="EN_ATTENTE">En attente</option>
-                        <option value="EN_COURS">En cours</option>
-                        <option value="TERMINEE">Terminée</option>
-                        {user.role === 'MANAGER' && (
-                          <option value="ANNULEE">Annuler</option>
-                        )}
-                      </select>
-                    </div>
-                  )}
+                        onValueChange={(status) => handleStatutChange(intervention.id, status)}
+                        canCancel={user.role === 'MANAGER'}
+                        isLoading={loadingActions[intervention.id] === 'status'}
+                      />
+                    )} */}
+                  </div>
                 </div>
               </div>
             </div>
