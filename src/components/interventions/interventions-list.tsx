@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { InterventionWithRelations, STATUT_COLORS, PRIORITE_COLORS } from '@/lib/types/intervention'
+import { useState, useEffect } from 'react'
+import { InterventionWithRelations, STATUT_COLORS, PRIORITE_COLORS, TechnicienOption } from '@/lib/types/intervention'
 import { UserSession } from '@/lib/types/auth'
-import { updateInterventionStatut, assignerIntervention } from '@/app/actions/intervention'
+import { updateInterventionStatut, assignerIntervention, getTechniciens } from '@/app/actions/intervention'
 import { InterventionForm } from './intervention-form'
 import { StatutIntervention } from '@prisma/client'
 
@@ -17,6 +17,17 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
   const [filter, setFilter] = useState('')
   const [statutFilter, setStatutFilter] = useState<StatutIntervention | 'ALL'>('ALL')
   const [showForm, setShowForm] = useState(false)
+  const [techniciens, setTechniciens] = useState<TechnicienOption[]>([])
+
+  useEffect(() => {
+    const loadTechniciens = async () => {
+      if (user.role === 'MANAGER') {
+        const techniciensData = await getTechniciens(user.hotelId)
+        setTechniciens(techniciensData)
+      }
+    }
+    loadTechniciens()
+  }, [user.hotelId, user.role])
 
   const filteredInterventions = interventions.filter(intervention => {
     const matchesSearch = intervention.titre.toLowerCase().includes(filter.toLowerCase()) ||
@@ -31,6 +42,27 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
       onRefresh()
     } else {
       alert(result.error || 'Erreur lors de la mise à jour')
+    }
+  }
+
+  const handleTechnicienChange = async (interventionId: number, technicienId: string) => {
+    const technicienIdNumber = technicienId === '' ? 0 : parseInt(technicienId)
+
+    if (technicienIdNumber === 0) {
+      // Désassigner le technicien - on va créer une fonction pour ça
+      const result = await assignerIntervention(interventionId, 0, user.id)
+      if (result.success) {
+        onRefresh()
+      } else {
+        alert(result.error || 'Erreur lors de la désassignation')
+      }
+    } else {
+      const result = await assignerIntervention(interventionId, technicienIdNumber, user.id)
+      if (result.success) {
+        onRefresh()
+      } else {
+        alert(result.error || 'Erreur lors de l\'assignation')
+      }
     }
   }
 
@@ -189,22 +221,44 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                 </div>
 
                 {/* Actions */}
-                {canChangeStatut(intervention) && intervention.statut !== 'TERMINEE' && (
-                  <div className="ml-4 flex-shrink-0">
-                    <select
-                      value={intervention.statut}
-                      onChange={(e) => handleStatutChange(intervention.id, e.target.value as StatutIntervention)}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="EN_ATTENTE">En attente</option>
-                      <option value="EN_COURS">En cours</option>
-                      <option value="TERMINEE">Terminée</option>
-                      {user.role === 'MANAGER' && (
-                        <option value="ANNULEE">Annuler</option>
-                      )}
-                    </select>
-                  </div>
-                )}
+                <div className="ml-4 flex-shrink-0 space-y-2">
+                  {/* Assignation technicien (MANAGER uniquement) */}
+                  {user.role === 'MANAGER' && (
+                    <div>
+                      <select
+                        value={intervention.assigneId || ''}
+                        onChange={(e) => handleTechnicienChange(intervention.id, e.target.value)}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+                      >
+                        <option value="">Non assigné</option>
+                        {techniciens.map(technicien => (
+                          <option key={technicien.id} value={technicien.id}>
+                            {technicien.name || technicien.email}
+                            {technicien.specialite && ` (${technicien.specialite})`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Changement de statut */}
+                  {canChangeStatut(intervention) && intervention.statut !== 'TERMINEE' && (
+                    <div>
+                      <select
+                        value={intervention.statut}
+                        onChange={(e) => handleStatutChange(intervention.id, e.target.value as StatutIntervention)}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
+                      >
+                        <option value="EN_ATTENTE">En attente</option>
+                        <option value="EN_COURS">En cours</option>
+                        <option value="TERMINEE">Terminée</option>
+                        {user.role === 'MANAGER' && (
+                          <option value="ANNULEE">Annuler</option>
+                        )}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))

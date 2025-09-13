@@ -117,6 +117,25 @@ export async function assignerIntervention(
       return { success: false, error: 'Seul un manager peut assigner des interventions' }
     }
 
+    // Si technicienId est 0, on désassigne
+    if (technicienId === 0) {
+      const updated = await prisma.intervention.update({
+        where: { id: interventionId },
+        data: {
+          assigneId: null,
+          statut: StatutIntervention.EN_ATTENTE
+        }
+      })
+
+      revalidatePath('/dashboard')
+
+      return {
+        success: true,
+        data: updated,
+        message: 'Intervention désassignée'
+      }
+    }
+
     // Vérifier que le technicien existe et est bien technicien
     const technicien = await prisma.user.findUnique({ where: { id: technicienId } })
     if (!technicien || technicien.role !== 'TECHNICIEN') {
