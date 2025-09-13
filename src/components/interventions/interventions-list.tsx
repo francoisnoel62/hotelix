@@ -154,9 +154,9 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
           )}
         </div>
 
-        {/* Filtres */}
-        <div className="flex gap-4 mb-4">
-          <div className="flex-1">
+        {/* Filtres - Responsive */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
+          <div className="flex-1 min-w-0">
             <input
               type="text"
               placeholder="Rechercher par titre ou zone..."
@@ -165,17 +165,19 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <select
-            value={statutFilter}
-            onChange={(e) => setStatutFilter(e.target.value as StatutIntervention | 'ALL')}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="ALL">Tous les statuts</option>
-            <option value="EN_ATTENTE">En attente</option>
-            <option value="EN_COURS">En cours</option>
-            <option value="TERMINEE">Terminée</option>
-            <option value="ANNULEE">Annulée</option>
-          </select>
+          <div className="sm:w-auto">
+            <select
+              value={statutFilter}
+              onChange={(e) => setStatutFilter(e.target.value as StatutIntervention | 'ALL')}
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="ALL">Tous les statuts</option>
+              <option value="EN_ATTENTE">En attente</option>
+              <option value="EN_COURS">En cours</option>
+              <option value="TERMINEE">Terminée</option>
+              <option value="ANNULEE">Annulée</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -187,83 +189,87 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
           </div>
         ) : (
           filteredInterventions.map((intervention) => (
-            <div key={intervention.id} className="p-6 hover:bg-gray-50">
-              <div className="flex items-start justify-between">
+            <div key={intervention.id} className="p-4 sm:p-6 hover:bg-gray-50">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="text-lg font-medium text-gray-900 truncate">
+                  {/* Titre et badges - Stack sur mobile, ligne sur desktop */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                    <h4 className="text-base sm:text-lg font-medium text-gray-900 truncate">
                       {intervention.titre}
                     </h4>
-                    <StatusCombobox
-                      value={intervention.statut}
-                      onValueChange={() => {}}
-                      readOnly={true}
-                    />
-                    <span className={getPrioriteBadgeClass(intervention.priorite)}>
-                      {intervention.priorite.toLowerCase()}
-                    </span>
-                    
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {intervention.type.toLowerCase()}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusCombobox
+                        value={intervention.statut}
+                        onValueChange={() => {}}
+                        readOnly={true}
+                      />
+                      <span className={getPrioriteBadgeClass(intervention.priorite)}>
+                        {intervention.priorite.toLowerCase()}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        {intervention.type.toLowerCase()}
+                      </span>
+                    </div>
                   </div>
 
                   {intervention.description && (
                     <p className="text-sm text-gray-600 mb-2">{intervention.description}</p>
                   )}
 
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                  {/* Métadonnées - Adaptées selon la taille d'écran */}
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                    {/* Zone - Toujours visible */}
                     <span className="flex items-center">
-                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      {intervention.zone.nom}
-                      {intervention.sousZone && ` - ${intervention.sousZone.nom}`}
+                      <span className="truncate">
+                        {intervention.zone.nom}
+                        {intervention.sousZone && ` - ${intervention.sousZone.nom}`}
+                      </span>
                     </span>
 
-                    <span className="flex items-center">
+                    {/* Date - Masquée sur très petits écrans */}
+                    <span className="hidden sm:flex items-center">
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {formatDate(intervention.dateCreation)}
+                      <span className="whitespace-nowrap">
+                        {formatDate(intervention.dateCreation)}
+                      </span>
                     </span>
 
-                    <span className="flex items-center">
+                    {/* Demandeur - Masqué sur mobiles, visible sur tablet+ */}
+                    <span className="hidden md:flex items-center">
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      Demandeur: {intervention.demandeur.name || intervention.demandeur.email}
+                      <span className="truncate">
+                        {intervention.demandeur.name || intervention.demandeur.email}
+                      </span>
                     </span>
 
-                    {/* {intervention.assigne && (
-                      <span className="flex items-center">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        Technicien: {intervention.assigne.name || intervention.assigne.email}
-                        {intervention.assigne.specialite && ` (${intervention.assigne.specialite})`}
-                      </span>
-                    )} */}
-
+                    {/* Origine - Badge condensé */}
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {intervention.origine === 'CLIENT' ? 'Client' : 'Staff'}
+                    </span>
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="ml-4 flex-shrink-0 space-y-3">
-                  
-                  <div className="flex items-center gap-2">
+                {/* Actions - Responsive layout */}
+                <div className="lg:ml-4 flex-shrink-0">
+                  <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-center gap-2">
                     {/* Bouton d'édition */}
                     {canEditIntervention(intervention) && (
                       <button
                         onClick={() => setEditingIntervention(intervention)}
-                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="inline-flex items-center justify-center px-2 sm:px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 whitespace-nowrap"
                       >
-                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3 h-3 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        Éditer
+                        <span className="hidden sm:inline">Éditer</span>
                       </button>
                     )}
 
@@ -274,7 +280,7 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                         value={intervention.assigneId}
                         onValueChange={(technicianId) => handleTechnicienChange(intervention.id, technicianId)}
                         isLoading={loadingActions[intervention.id] === 'technician'}
-                        className="min-w-[180px]"
+                        className="min-w-[140px] sm:min-w-[160px] lg:min-w-[180px]"
                       />
                     )}
 
