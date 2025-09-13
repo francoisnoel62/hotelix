@@ -1,15 +1,19 @@
 import { NextResponse } from 'next/server'
-import { AuthService } from '@/lib/auth/auth-service'
+import { prisma } from '@/lib/prisma'
 
 export async function GET() {
   try {
-    const result = await AuthService.getHotels()
+    const hotels = await prisma.hotel.findMany({
+      orderBy: { nom: 'asc' }
+    })
 
-    if (!result.success) {
-      return NextResponse.json(result, { status: 500 })
-    }
-
-    return NextResponse.json(result, { status: 200 })
+    return NextResponse.json(
+      {
+        success: true,
+        data: hotels
+      },
+      { status: 200 }
+    )
   } catch (error) {
     console.error('Hotels API error:', error)
     return NextResponse.json(

@@ -12,14 +12,25 @@ export interface AuthResult<T = null> {
   data?: T
   error?: AuthError
   message?: string
+  fieldErrors?: Record<string, string>
 }
 
-export interface LoginRequest {
+// Types unifiés pour l'authentification
+export interface AuthFormData {
   email: string
   password: string
   hotelId: number
 }
 
+export interface RegisterFormData extends AuthFormData {
+  confirmPassword: string
+  name?: string
+  role?: 'MANAGER' | 'STAFF'
+}
+
+export interface LoginFormData extends AuthFormData {}
+
+// Types pour les Server Actions (sans confirmPassword)
 export interface RegisterRequest {
   email: string
   password: string
@@ -27,6 +38,8 @@ export interface RegisterRequest {
   hotelId: number
   role?: 'MANAGER' | 'STAFF'
 }
+
+export interface LoginRequest extends AuthFormData {}
 
 export interface UserSession {
   id: number
@@ -40,4 +53,11 @@ export interface UserSession {
     adresse: string
     pays: string
   }
+}
+
+export interface Hotel {
+  id: number
+  nom: string
+  adresse: string
+  pays: string
 }

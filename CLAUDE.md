@@ -31,24 +31,75 @@ The application uses a hotel management domain model with:
 - **Hotel** model with location information
 - Users belong to hotels (many-to-one relationship)
 
-## Project Structure
+## Architecture Moderne (Clean Code & Best Practices)
 
-- `src/app/` - Next.js App Router pages and layouts
-- `src/components/ui/` - shadcn/ui reusable components
-- `src/lib/` - Utility functions and shared logic
-- `prisma/` - Database schema, migrations, and seed files
+### Server Actions vs API Routes
+✅ **UTILISE TOUJOURS les Server Actions** pour les opérations serveur (auth, CRUD)
+❌ **ÉVITE les API Routes** sauf pour webhooks/intégrations tierces
+
+### Structure Optimisée
+```
+src/
+├── app/
+│   ├── actions/          # Server Actions (priorité)
+│   ├── auth/            # Pages d'authentification
+│   ├── api/             # API Routes (minimal, uniquement si nécessaire)
+│   └── layout.tsx
+├── components/
+│   ├── auth/            # Composants d'authentification
+│   └── ui/              # shadcn/ui components
+├── lib/
+│   ├── types/           # Types TypeScript
+│   ├── validations/     # Validation schemas
+│   └── prisma.ts        # Singleton PrismaClient
+└── prisma/              # Schéma, migrations, seed
+```
+
+### Patterns Implementés
+
+#### 1. **Server Actions avec Progressive Enhancement**
+- ✅ `src/app/actions/auth.ts` - Actions serveur pour l'authentification
+- ✅ `useActionState` pour l'état des formulaires
+- ✅ Validation côté client ET serveur
+
+#### 2. **Architecture des Composants**
+- ✅ **Server Components** par défaut (SSR optimisé)
+- ✅ **Client Components** uniquement pour l'interactivité
+- ✅ **React Hook Form** pour la gestion des formulaires
+- ✅ **Suspense** avec fallbacks optimisés
+
+#### 3. **Gestion des Données**
+- ✅ **Singleton PrismaClient** (`src/lib/prisma.ts`)
+- ✅ **Types unifiés** dans `src/lib/types/auth.ts`
+- ✅ **Validation centralisée** avec fonctions réutilisables
+
+#### 4. **Performance & UX**
+- ✅ **Chargement des données côté serveur** (HotelsProvider)
+- ✅ **États de chargement** avec `isPending`
+- ✅ **Gestion d'erreurs typées** (AuthError enum)
 
 ## UI Component System
 
-This project uses shadcn/ui with:
+### shadcn/ui Configuration
 - **Style**: "new-york" variant
 - **Base color**: neutral
 - **CSS variables**: enabled
 - **Path aliases**: `@/components`, `@/lib`, `@/ui`, `@/hooks`
-- Components follow Radix UI patterns with CVA for variants
+- **Formulaires**: React Hook Form + Server Actions
 
-## Key Configuration
+## Conventions de Développement
 
-- **TypeScript**: Uses `@/*` path alias for `./src/*`
-- **ESLint**: Next.js TypeScript configuration with core-web-vitals
-- **Prisma**: PostgreSQL provider, uses `DATABASE_URL` environment variable
+### 🔒 Authentification
+- Utilise les Server Actions dans `src/app/actions/auth.ts`
+- Types unifiés : `LoginFormData`, `RegisterFormData`, `UserSession`
+- Validation double : client (React Hook Form) + serveur (fonctions utilitaires)
+
+### 📊 Base de Données
+- Singleton PrismaClient pour éviter les fuites mémoire
+- Schema Prisma avec relations appropriées
+- Migrations versionnées
+
+### 🎨 Composants
+- Server Components par défaut
+- Client Components marqués avec 'use client'
+- Progressive enhancement avec fallbacks

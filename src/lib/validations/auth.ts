@@ -1,17 +1,4 @@
-export interface LoginFormData {
-  email: string
-  password: string
-  hotelId: number
-}
-
-export interface RegisterFormData {
-  email: string
-  password: string
-  confirmPassword: string
-  name?: string
-  hotelId: number
-  role?: 'MANAGER' | 'STAFF'
-}
+import { LoginFormData, RegisterFormData } from '@/lib/types/auth'
 
 export function validateEmail(email: string): string | null {
   if (!email) return 'Email requis'
