@@ -4,22 +4,37 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { UserSession } from '@/lib/types/auth'
+import { InterventionWithRelations } from '@/lib/types/intervention'
 import { logoutAction } from '@/app/actions/auth'
+import { getInterventions } from '@/app/actions/intervention'
+import { InterventionsList } from '@/components/interventions/interventions-list'
 
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserSession | null>(null)
+  const [interventions, setInterventions] = useState<InterventionWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Simuler la récupération de l'utilisateur depuis le localStorage ou session
-    const userData = localStorage.getItem('user')
-    if (userData) {
-      setUser(JSON.parse(userData))
-    } else {
-      router.push('/auth')
+    const loadData = async () => {
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        const parsedUser = JSON.parse(userData)
+        setUser(parsedUser)
+
+        const interventionsData = await getInterventions(
+          parsedUser.hotelId,
+          parsedUser.id,
+          parsedUser.role
+        )
+        setInterventions(interventionsData)
+      } else {
+        router.push('/auth')
+      }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+
+    loadData()
   }, [router])
 
   const handleLogout = async () => {
@@ -36,6 +51,17 @@ export default function DashboardPage() {
     setUser(updatedUser)
   }
 
+  const refreshInterventions = async () => {
+    if (user) {
+      const interventionsData = await getInterventions(
+        user.hotelId,
+        user.id,
+        user.role
+      )
+      setInterventions(interventionsData)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -48,6 +74,43 @@ export default function DashboardPage() {
     return null
   }
 
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'MANAGER': return 'Manager'
+      case 'STAFF': return 'Personnel'
+      case 'TECHNICIEN': return 'Technicien'
+      default: return 'Utilisateur'
+    }
+  }
+
+  const getStatsForRole = (role: string, interventions: InterventionWithRelations[]) => {
+    const enCours = interventions.filter(i => i.statut === 'EN_COURS').length
+    const enAttente = interventions.filter(i => i.statut === 'EN_ATTENTE').length
+    const terminees = interventions.filter(i => i.statut === 'TERMINEE').length
+
+    if (role === 'TECHNICIEN') {
+      return {
+        title: 'Mes interventions',
+        stats: [
+          { label: 'En cours', value: enCours, color: 'blue' },
+          { label: 'En attente', value: enAttente, color: 'orange' },
+          { label: 'Terminées', value: terminees, color: 'green' }
+        ]
+      }
+    }
+
+    return {
+      title: 'Interventions',
+      stats: [
+        { label: 'En cours', value: enCours, color: 'blue' },
+        { label: 'En attente', value: enAttente, color: 'orange' },
+        { label: 'Total', value: interventions.length, color: 'purple' }
+      ]
+    }
+  }
+
+  const stats = getStatsForRole(user.role, interventions)
+
   return (
     <DashboardLayout user={user} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate}>
       <div className="space-y-6">
@@ -57,87 +120,39 @@ export default function DashboardPage() {
             Bienvenue, {user.name || user.email} !
           </h2>
           <p className="text-gray-600">
-            Vous êtes connecté en tant que {user.role === 'MANAGER' ? 'Manager ' : 'Employé '} 
-            de l'hôtel <span className="font-semibold">{user.hotel.nom}</span>.
+            Vous êtes connecté en tant que {getRoleDisplayName(user.role)}
+            {user.role === 'TECHNICIEN' && user.specialite && (
+              <span> - Spécialité: {user.specialite}</span>
+            )}
+            {' '}de l'hôtel <span className="font-semibold">{user.hotel.nom}</span>.
           </p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Utilisateurs</p>
-                <p className="text-2xl font-bold text-gray-900">12</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Réservations</p>
-                <p className="text-2xl font-bold text-gray-900">45</p>
+          {stats.stats.map((stat, index) => (
+            <div key={index} className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
+                  <svg className={`w-6 h-6 text-${stat.color}-600`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Chambres</p>
-                <p className="text-2xl font-bold text-gray-900">24</p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Activité récente</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-2 h-2 mt-2 bg-blue-400 rounded-full"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">Nouvelle réservation pour la chambre 101</p>
-                  <p className="text-sm text-gray-500">Il y a 2 heures</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-2 h-2 mt-2 bg-green-400 rounded-full"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">Check-out effectué pour la chambre 205</p>
-                  <p className="text-sm text-gray-500">Il y a 4 heures</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-2 h-2 mt-2 bg-yellow-400 rounded-full"></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-900">Maintenance programmée pour la chambre 150</p>
-                  <p className="text-sm text-gray-500">Il y a 6 heures</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Interventions List */}
+        <InterventionsList
+          interventions={interventions}
+          user={user}
+          onRefresh={refreshInterventions}
+        />
       </div>
     </DashboardLayout>
   )

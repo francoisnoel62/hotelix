@@ -16,6 +16,58 @@ datasource db {
 enum Role {
   MANAGER
   STAFF
+  TECHNICIEN
+}
+
+enum StatutIntervention {
+  EN_ATTENTE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+enum TypeIntervention {
+  PLOMBERIE
+  ELECTRICITE
+  CLIMATISATION
+  CHAUFFAGE
+  MENUISERIE
+  PEINTURE
+  NETTOYAGE
+  AUTRE
+}
+
+enum PrioriteIntervention {
+  BASSE
+  NORMALE
+  HAUTE
+  URGENTE
+}
+
+enum OrigineIntervention {
+  STAFF
+  CLIENT
+}
+
+enum TypeZone {
+  CHAMBRE
+  RESTAURANT
+  BAR
+  RECEPTION
+  SALON
+  COULOIR
+  ESCALIER
+  ASCENSEUR
+  PARKING
+  JARDIN
+  PISCINE
+  SPA
+  SALLE_SPORT
+  CUISINE
+  BUANDERIE
+  CAVE
+  GRENIER
+  AUTRE
 }
 
 model User {
@@ -24,11 +76,14 @@ model User {
   password  String
   name      String?
   role      Role     @default(STAFF)
+  specialite String?  // Pour les techniciens
   createdAt DateTime @default(now())
 
-  // Relation
-  hotelId   Int
-  hotel     Hotel    @relation(fields: [hotelId], references: [id])
+  // Relations
+  hotelId              Int
+  hotel                Hotel          @relation(fields: [hotelId], references: [id])
+  interventionsDemandees Intervention[] @relation("InterventionDemandeur")
+  interventionsAssignees Intervention[] @relation("InterventionAssigne")
 }
 
 model Hotel {
@@ -37,6 +92,61 @@ model Hotel {
   adresse String
   pays    String
 
-  // Relation
-  users   User[]
+  // Relations
+  users         User[]
+  interventions Intervention[]
+  zones         Zone[]
+}
+
+model Zone {
+  id          Int      @id @default(autoincrement())
+  nom         String
+  type        TypeZone
+  description String?
+
+  // Relations
+  hotelId       Int
+  hotel         Hotel          @relation(fields: [hotelId], references: [id])
+  sousZones     SousZone[]
+  interventions Intervention[]
+}
+
+model SousZone {
+  id          Int     @id @default(autoincrement())
+  nom         String
+  description String?
+
+  // Relations
+  zoneId        Int
+  zone          Zone           @relation(fields: [zoneId], references: [id])
+  interventions Intervention[]
+}
+
+model Intervention {
+  id          Int                   @id @default(autoincrement())
+  titre       String
+  description String?
+  statut      StatutIntervention    @default(EN_ATTENTE)
+  type        TypeIntervention
+  priorite    PrioriteIntervention  @default(NORMALE)
+  origine     OrigineIntervention
+  dateCreation DateTime             @default(now())
+  dateDebut   DateTime?
+  dateFin     DateTime?
+
+  // Relations
+  hotelId     Int
+  hotel       Hotel  @relation(fields: [hotelId], references: [id])
+
+  demandeurId Int
+  demandeur   User   @relation("InterventionDemandeur", fields: [demandeurId], references: [id])
+
+  assigneId   Int?
+  assigne     User?  @relation("InterventionAssigne", fields: [assigneId], references: [id])
+
+  zoneId      Int
+  zone        Zone   @relation(fields: [zoneId], references: [id])
+
+  sousZoneId  Int?
+  sousZone    SousZone? @relation(fields: [sousZoneId], references: [id])
 }

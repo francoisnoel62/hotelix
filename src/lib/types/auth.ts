@@ -25,7 +25,8 @@ export interface AuthFormData {
 export interface RegisterFormData extends AuthFormData {
   confirmPassword: string
   name?: string
-  role?: 'MANAGER' | 'STAFF'
+  role?: 'MANAGER' | 'STAFF' | 'TECHNICIEN'
+  specialite?: string
 }
 
 export interface LoginFormData extends AuthFormData {}
@@ -36,7 +37,8 @@ export interface RegisterRequest {
   password: string
   name?: string
   hotelId: number
-  role?: 'MANAGER' | 'STAFF'
+  role?: 'MANAGER' | 'STAFF' | 'TECHNICIEN'
+  specialite?: string
 }
 
 export interface LoginRequest extends AuthFormData {}
@@ -45,7 +47,8 @@ export interface UserSession {
   id: number
   email: string
   name: string | null
-  role: 'MANAGER' | 'STAFF'
+  role: 'MANAGER' | 'STAFF' | 'TECHNICIEN'
+  specialite?: string | null
   hotelId: number
   hotel: {
     id: number
