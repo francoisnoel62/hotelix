@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { InterventionFormData } from '@/lib/types/intervention'
 import { StatutIntervention } from '@prisma/client'
 
-interface ActionResult<T = null> {
+interface ActionResult<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -168,7 +168,7 @@ export async function assignerIntervention(
 
 export async function getInterventions(hotelId: number, userId: number, userRole: string) {
   try {
-    let whereClause: any = { hotelId }
+    const whereClause: Record<string, unknown> = { hotelId }
 
     // Filtrer selon le rôle
     if (userRole === 'TECHNICIEN') {

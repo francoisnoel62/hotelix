@@ -128,7 +128,7 @@ export function InterventionForm({ user, onSuccess, onCancel }: InterventionForm
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                  Type d'intervention *
+                  Type d&apos;intervention *
                 </label>
                 <select
                   {...register('type', { required: 'Le type est requis' })}

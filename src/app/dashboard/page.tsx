@@ -124,7 +124,7 @@ export default function DashboardPage() {
             {user.role === 'TECHNICIEN' && user.specialite && (
               <span> - Spécialité: {user.specialite}</span>
             )}
-            {' '}de l'hôtel <span className="font-semibold">{user.hotel.nom}</span>.
+            {' '}de l&apos;hôtel <span className="font-semibold">{user.hotel.nom}</span>.
           </p>
         </div>
 

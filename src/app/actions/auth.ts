@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma'
 import bcryptjs from 'bcryptjs'
-import { AuthError, AuthResult, LoginRequest, RegisterRequest, UserSession } from '@/lib/types/auth'
+import { AuthError, AuthResult, UserSession } from '@/lib/types/auth'
 import { validateLoginForm, validateRegisterForm } from '@/lib/validations/auth'
 
 export async function registerAction(prevState: AuthResult<UserSession> | null, formData: FormData): Promise<AuthResult<UserSession>> {
@@ -228,7 +228,7 @@ export async function updateProfileAction(
     }
 
     // Préparer les données de mise à jour
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       name: profileData.name,
       email: profileData.email,
       role: profileData.role

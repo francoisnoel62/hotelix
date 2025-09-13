@@ -14,35 +14,36 @@ export interface InterventionFormData {
 export interface InterventionWithRelations {
   id: number
   titre: string
-  description?: string
+  description: string | null
   statut: StatutIntervention
   type: TypeIntervention
   priorite: PrioriteIntervention
   origine: OrigineIntervention
   dateCreation: Date
-  dateDebut?: Date
-  dateFin?: Date
+  dateDebut: Date | null
+  dateFin: Date | null
+  assigneId: number | null
   demandeur: {
     id: number
-    name?: string
+    name: string | null
     email: string
     role: string
   }
-  assigne?: {
+  assigne: {
     id: number
-    name?: string
+    name: string | null
     email: string
-    specialite?: string
-  }
+    specialite: string | null
+  } | null
   zone: {
     id: number
     nom: string
     type: TypeZone
   }
-  sousZone?: {
+  sousZone: {
     id: number
     nom: string
-  }
+  } | null
 }
 
 export interface ZoneWithSousZones {
@@ -57,9 +58,9 @@ export interface ZoneWithSousZones {
 
 export interface TechnicienOption {
   id: number
-  name?: string
+  name: string | null
   email: string
-  specialite?: string
+  specialite: string | null
 }
 
 export type StatutColor = 'gray' | 'blue' | 'green' | 'red'
