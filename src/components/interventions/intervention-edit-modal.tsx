@@ -33,6 +33,7 @@ export function InterventionEditModal({
   const [zones, setZones] = useState<ZoneWithSousZones[]>([])
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(intervention.zone.id)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [zonesLoaded, setZonesLoaded] = useState(false)
   const { toast } = useToast()
 
   const { register, handleSubmit, formState: { errors }, watch, setValue, reset } = useForm<InterventionFormData>({
@@ -52,26 +53,18 @@ export function InterventionEditModal({
     const loadZones = async () => {
       const zonesData = await getZones(user.hotelId)
       setZones(zonesData)
+      setZonesLoaded(true)
     }
 
     if (isOpen) {
+      setZonesLoaded(false)
       loadZones()
     }
   }, [user.hotelId, isOpen])
 
+  // Reset form when intervention changes or modal opens AND zones are loaded
   useEffect(() => {
-    if (watchedZoneId) {
-      setSelectedZoneId(Number(watchedZoneId))
-      // Reset sous-zone si la zone change
-      if (Number(watchedZoneId) !== intervention.zone.id) {
-        setValue('sousZoneId', undefined)
-      }
-    }
-  }, [watchedZoneId, setValue, intervention.zone.id])
-
-  // Reset form when intervention changes or modal opens
-  useEffect(() => {
-    if (isOpen) {
+    if (isOpen && zonesLoaded) {
       reset({
         titre: intervention.titre,
         description: intervention.description || '',
@@ -82,7 +75,17 @@ export function InterventionEditModal({
       })
       setSelectedZoneId(intervention.zone.id)
     }
-  }, [intervention, isOpen, reset])
+  }, [intervention, isOpen, reset, zonesLoaded])
+
+  useEffect(() => {
+    if (watchedZoneId && isOpen) {
+      setSelectedZoneId(Number(watchedZoneId))
+      // Reset sous-zone seulement si l'utilisateur change manuellement la zone
+      if (Number(watchedZoneId) !== intervention.zone.id) {
+        setValue('sousZoneId', undefined)
+      }
+    }
+  }, [watchedZoneId, setValue, intervention.zone.id, isOpen])
 
   const selectedZone = zones.find(z => z.id === selectedZoneId)
 
@@ -134,6 +137,7 @@ export function InterventionEditModal({
       zoneId: intervention.zone.id,
       sousZoneId: intervention.sousZone?.id || undefined,
     })
+    setSelectedZoneId(intervention.zone.id)
     onOpenChange(false)
   }
 

@@ -202,6 +202,10 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                     <span className={getPrioriteBadgeClass(intervention.priorite)}>
                       {intervention.priorite.toLowerCase()}
                     </span>
+                    
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      {intervention.type.toLowerCase()}
+                    </span>
                   </div>
 
                   {intervention.description && (
@@ -243,13 +247,6 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                       </span>
                     )} */}
 
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {intervention.type.toLowerCase()}
-                    </span>
-
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {intervention.origine === 'CLIENT' ? 'Client' : 'Personnel'}
-                    </span>
                   </div>
                 </div>
 
