@@ -1,35 +1,32 @@
 import { PrismaClient } from "@prisma/client"
+
 const prisma = new PrismaClient()
 
 async function main() {
-  // Créer l'hôtel
-  const hotel = await prisma.hotel.create({
-    data: {
-      nom: "Club Med Palmiye",
-      adresse: "Kemer, Antalya",
-      pays: "Turquie",
-    },
-  })
-
-  // Créer 2 users liés à cet hôtel
-  await prisma.user.createMany({
+  // Créer les hôtels
+  await prisma.hotel.createMany({
     data: [
       {
-        email: "manager@palmiye.com",
-        name: "Fanfan",
-        role: "MANAGER",
-        hotelId: hotel.id,
+        nom: "Club Med Palmiye",
+        adresse: "Kemer, Antalya",
+        pays: "Turquie",
       },
       {
-        email: "staff@palmiye.com",
-        name: "Burcu",
-        role: "STAFF",
-        hotelId: hotel.id,
+        nom: "Grand Hotel Paris",
+        adresse: "Avenue des Champs-Élysées",
+        pays: "France",
+      },
+      {
+        nom: "Hotel Barcelona Plaza",
+        adresse: "Plaça Catalunya",
+        pays: "Espagne",
       },
     ],
   })
 
-  console.log("✅ Hôtel et users créés avec succès !")
+  console.log("✅ Hôtels créés avec succès !")
+  console.log("📧 Vous pouvez maintenant tester les workflows d'authentification")
+  console.log("🌐 Accédez à http://localhost:3000 pour commencer")
 }
 
 main()
