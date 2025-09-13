@@ -1,6 +1,6 @@
 'use client'
 
-import { LogOut, Hotel, Users, Calendar, Settings } from 'lucide-react'
+import { LogOut, Hotel, Users, Calendar, Settings, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UserSession } from '@/lib/types/auth'
 import { ProfileEditModal } from './profile-edit-modal'
@@ -9,9 +9,11 @@ interface DashboardSidebarProps {
   user: UserSession
   onLogout: () => void
   onProfileUpdate?: (updatedUser: UserSession) => void
+  mobile?: boolean
+  onClose?: () => void
 }
 
-export function DashboardSidebar({ user, onLogout, onProfileUpdate }: DashboardSidebarProps) {
+export function DashboardSidebar({ user, onLogout, onProfileUpdate, mobile = false, onClose }: DashboardSidebarProps) {
   const menuItems = [
     { icon: Hotel, label: 'Accueil', href: '/dashboard' },
     { icon: Users, label: 'Utilisateurs', href: '/dashboard/users' },
@@ -19,14 +21,32 @@ export function DashboardSidebar({ user, onLogout, onProfileUpdate }: DashboardS
     { icon: Settings, label: 'Paramètres', href: '/dashboard/settings' },
   ]
 
+  const handleLinkClick = () => {
+    if (mobile && onClose) {
+      onClose()
+    }
+  }
+
   return (
     <div className="flex h-full w-64 flex-col bg-gray-50 border-r">
       {/* Header */}
-      <div className="flex h-16 items-center justify-center border-b bg-white">
+      <div className="flex h-16 items-center justify-between border-b bg-white px-4">
         <div className="flex items-center gap-2">
           <Hotel className="h-6 w-6 text-primary" />
           <span className="text-lg font-semibold">Hotelix</span>
         </div>
+
+        {/* Close button for mobile */}
+        {mobile && onClose && (
+          <button
+            type="button"
+            className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+            onClick={onClose}
+          >
+            <span className="sr-only">Fermer le menu</span>
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* User Info */}
@@ -61,7 +81,7 @@ export function DashboardSidebar({ user, onLogout, onProfileUpdate }: DashboardS
                   className="w-full justify-start gap-3 h-10 px-3"
                   asChild
                 >
-                  <a href={item.href}>
+                  <a href={item.href} onClick={handleLinkClick}>
                     <Icon className="h-4 w-4" />
                     {item.label}
                   </a>
