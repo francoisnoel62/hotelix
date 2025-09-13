@@ -169,6 +169,13 @@ export async function loginAction(prevState: AuthResult<UserSession> | null, for
   }
 }
 
+export async function logoutAction() {
+  return {
+    success: true,
+    message: 'Déconnexion réussie'
+  }
+}
+
 export async function getHotelsAction() {
   try {
     const hotels = await prisma.hotel.findMany({

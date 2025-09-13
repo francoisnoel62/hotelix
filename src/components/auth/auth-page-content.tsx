@@ -15,11 +15,12 @@ export function AuthPageContent({ hotels }: AuthPageContentProps) {
   const router = useRouter()
 
   const handleAuthSuccess = (user: UserSession) => {
-    // TODO: Gérer la session utilisateur (cookies, context, etc.)
+    // Sauvegarder l'utilisateur dans localStorage (temporaire)
+    localStorage.setItem('user', JSON.stringify(user))
     console.log('Utilisateur connecté:', user)
 
-    // Rediriger vers la page d'accueil
-    router.push('/')
+    // Rediriger vers le dashboard
+    router.push('/dashboard')
   }
 
   const switchToRegister = () => setMode('register')

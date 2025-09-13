@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Combobox } from '@/components/ui/combobox'
 import { registerAction } from '@/app/actions/auth'
 import { RegisterFormData, Hotel, AuthResult, UserSession } from '@/lib/types/auth'
 import { validateRegisterForm } from '@/lib/validations/auth'
@@ -133,21 +134,17 @@ export function OptimizedRegisterForm({
 
         <div className="space-y-2">
           <Label htmlFor="hotelId">Hôtel</Label>
-          <Select
-            onValueChange={(value) => setValue('hotelId', parseInt(value))}
+          <Combobox
+            options={hotels.map((hotel) => ({
+              value: hotel.id.toString(),
+              label: `${hotel.nom} - ${hotel.adresse}, ${hotel.pays}`
+            }))}
             value={selectedHotelId?.toString()}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez votre hôtel" />
-            </SelectTrigger>
-            <SelectContent>
-              {hotels.map((hotel) => (
-                <SelectItem key={hotel.id} value={hotel.id.toString()}>
-                  {hotel.nom} - {hotel.adresse}, {hotel.pays}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            onValueChange={(value) => setValue('hotelId', parseInt(value))}
+            placeholder="Sélectionnez votre hôtel"
+            searchPlaceholder="Rechercher un hôtel..."
+            emptyText="Aucun hôtel trouvé."
+          />
           {(errors.hotelId || state.fieldErrors?.hotelId) && (
             <p className="text-sm text-destructive">
               {errors.hotelId?.message || state.fieldErrors?.hotelId}
