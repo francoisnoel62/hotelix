@@ -222,6 +222,74 @@ export async function getZones(hotelId: number) {
   }
 }
 
+export async function updateIntervention(
+  interventionId: number,
+  formData: Partial<InterventionFormData>,
+  userId: number
+): Promise<ActionResult> {
+  try {
+    // Vérifier que l'intervention existe
+    const intervention = await prisma.intervention.findUnique({
+      where: { id: interventionId },
+      include: { assigne: true, demandeur: true }
+    })
+
+    if (!intervention) {
+      return { success: false, error: 'Intervention non trouvée' }
+    }
+
+    // Vérifier les permissions
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return { success: false, error: 'Utilisateur non trouvé' }
+    }
+
+    // MANAGER peut tout modifier
+    // TECHNICIEN ne peut modifier que ses interventions assignées
+    // STAFF ne peut pas modifier les interventions
+    const peutModifier =
+      user.role === 'MANAGER' ||
+      (user.role === 'TECHNICIEN' && intervention.assigneId === userId)
+
+    if (!peutModifier) {
+      return { success: false, error: 'Permission insuffisante pour modifier cette intervention' }
+    }
+
+    // Empêcher la modification si l'intervention est terminée ou annulée
+    if (intervention.statut === StatutIntervention.TERMINEE || intervention.statut === StatutIntervention.ANNULEE) {
+      return { success: false, error: 'Impossible de modifier une intervention terminée ou annulée' }
+    }
+
+    const updated = await prisma.intervention.update({
+      where: { id: interventionId },
+      data: {
+        titre: formData.titre,
+        description: formData.description,
+        type: formData.type,
+        priorite: formData.priorite,
+        zoneId: formData.zoneId,
+        sousZoneId: formData.sousZoneId,
+        // On ne permet pas de changer l'assigné ici (utilisé ailleurs)
+        // On ne change pas l'origine non plus
+      }
+    })
+
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+      data: updated,
+      message: 'Intervention mise à jour avec succès'
+    }
+  } catch (error) {
+    console.error('Erreur mise à jour intervention:', error)
+    return {
+      success: false,
+      error: 'Erreur lors de la mise à jour de l\'intervention'
+    }
+  }
+}
+
 export async function getTechniciens(hotelId: number) {
   try {
     const techniciens = await prisma.user.findMany({

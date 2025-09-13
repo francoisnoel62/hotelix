@@ -5,6 +5,7 @@ import { InterventionWithRelations, PRIORITE_COLORS, TechnicienOption } from '@/
 import { UserSession } from '@/lib/types/auth'
 import { updateInterventionStatut, assignerIntervention, getTechniciens } from '@/app/actions/intervention'
 import { InterventionForm } from './intervention-form'
+import { InterventionEditModal } from './intervention-edit-modal'
 import { StatusCombobox } from './status-combobox'
 import { TechnicianCombobox } from './technician-combobox'
 import { QuickActionButtons } from './quick-action-buttons'
@@ -21,6 +22,7 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
   const [filter, setFilter] = useState('')
   const [statutFilter, setStatutFilter] = useState<StatutIntervention | 'ALL'>('ALL')
   const [showForm, setShowForm] = useState(false)
+  const [editingIntervention, setEditingIntervention] = useState<InterventionWithRelations | null>(null)
   const [techniciens, setTechniciens] = useState<TechnicienOption[]>([])
   const [loadingActions, setLoadingActions] = useState<{ [key: number]: 'status' | 'technician' | null }>({})
   const { toast } = useToast()
@@ -114,6 +116,25 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
   const canChangeStatut = (intervention: InterventionWithRelations) => {
     return user.role === 'MANAGER' ||
            (user.role === 'TECHNICIEN' && intervention.assigneId === user.id)
+  }
+
+  const canEditIntervention = (intervention: InterventionWithRelations) => {
+    // Ne peut pas éditer si terminée ou annulée
+    if (intervention.statut === StatutIntervention.TERMINEE || intervention.statut === StatutIntervention.ANNULEE) {
+      return false
+    }
+
+    // MANAGER peut toujours éditer
+    if (user.role === 'MANAGER') {
+      return true
+    }
+
+    // TECHNICIEN peut éditer seulement ses interventions assignées
+    if (user.role === 'TECHNICIEN' && intervention.assigneId === user.id) {
+      return true
+    }
+
+    return false
   }
 
   return (
@@ -245,6 +266,19 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
                   )}
 
                   <div className="flex items-center gap-2">
+                    {/* Bouton d'édition */}
+                    {canEditIntervention(intervention) && (
+                      <button
+                        onClick={() => setEditingIntervention(intervention)}
+                        className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Éditer
+                      </button>
+                    )}
+
                     {/* Assignation technicien (MANAGER uniquement) */}
                     {user.role === 'MANAGER' && (
                       <TechnicianCombobox
@@ -282,6 +316,24 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
             onRefresh()
           }}
           onCancel={() => setShowForm(false)}
+        />
+      )}
+
+      {/* Modal d'édition */}
+      {editingIntervention && (
+        <InterventionEditModal
+          intervention={editingIntervention}
+          user={user}
+          isOpen={!!editingIntervention}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingIntervention(null)
+            }
+          }}
+          onSuccess={() => {
+            setEditingIntervention(null)
+            onRefresh()
+          }}
         />
       )}
     </div>
