@@ -4,7 +4,8 @@ import bcrypt from "bcryptjs"
 const prisma = new PrismaClient()
 
 async function main() {
-  // Nettoyer les données existantes
+  // Nettoyer les données existantes dans le bon ordre (contraintes de clés étrangères)
+  await prisma.message.deleteMany()
   await prisma.intervention.deleteMany()
   await prisma.sousZone.deleteMany()
   await prisma.zone.deleteMany()
@@ -77,6 +78,107 @@ async function main() {
         name: "Marie Électricienne",
         role: Role.TECHNICIEN,
         specialite: "Électricité",
+        hotelId: clubMed.id,
+      },
+    }),
+    // 10 techniciens supplémentaires
+    prisma.user.create({
+      data: {
+        email: "climatisation@clubmed.com",
+        password: hashedPassword,
+        name: "Antoine Climatisation",
+        role: Role.TECHNICIEN,
+        specialite: "Climatisation",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "chauffage@clubmed.com",
+        password: hashedPassword,
+        name: "Julien Thermique",
+        role: Role.TECHNICIEN,
+        specialite: "Chauffage",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "menuiserie@clubmed.com",
+        password: hashedPassword,
+        name: "Claire Menuisière",
+        role: Role.TECHNICIEN,
+        specialite: "Menuiserie",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "peinture@clubmed.com",
+        password: hashedPassword,
+        name: "Marc Peintre",
+        role: Role.TECHNICIEN,
+        specialite: "Peinture",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "nettoyage@clubmed.com",
+        password: hashedPassword,
+        name: "Sarah Nettoyage",
+        role: Role.TECHNICIEN,
+        specialite: "Nettoyage",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "jardinier@clubmed.com",
+        password: hashedPassword,
+        name: "Thomas Jardinier",
+        role: Role.TECHNICIEN,
+        specialite: "Jardinage",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "securite@clubmed.com",
+        password: hashedPassword,
+        name: "Emma Sécurité",
+        role: Role.TECHNICIEN,
+        specialite: "Sécurité",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "ascenseur@clubmed.com",
+        password: hashedPassword,
+        name: "Lucas Ascenseurs",
+        role: Role.TECHNICIEN,
+        specialite: "Ascenseurs",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "piscine@clubmed.com",
+        password: hashedPassword,
+        name: "Nina Piscines",
+        role: Role.TECHNICIEN,
+        specialite: "Piscines",
+        hotelId: clubMed.id,
+      },
+    }),
+    prisma.user.create({
+      data: {
+        email: "informatique@clubmed.com",
+        password: hashedPassword,
+        name: "Alexandre IT",
+        role: Role.TECHNICIEN,
+        specialite: "Informatique",
         hotelId: clubMed.id,
       },
     }),
@@ -254,7 +356,7 @@ async function main() {
     const randomSousZone = zonesSousZones[Math.floor(Math.random() * zonesSousZones.length)]
 
     const demandeur = users[Math.floor(Math.random() * 2)] // Staff ou Manager
-    const assigneTechnicien = Math.random() > 0.3 ? users[2 + Math.floor(Math.random() * 2)] : null // 70% chance d'avoir un technicien
+    const assigneTechnicien = Math.random() > 0.3 ? users[2 + Math.floor(Math.random() * 12)] : null // 70% chance d'avoir un technicien (12 techniciens disponibles)
 
     let dateDebut = null
     let dateFin = null
@@ -299,8 +401,19 @@ async function main() {
   console.log("\n👥 Utilisateurs de test:")
   console.log("📧 Manager: manager@clubmed.com / password123")
   console.log("📧 Staff: staff@clubmed.com / password123")
-  console.log("📧 Plombier: plombier@clubmed.com / password123")
-  console.log("📧 Électricienne: electricien@clubmed.com / password123")
+  console.log("\n🔧 Techniciens disponibles (12 au total):")
+  console.log("📧 plombier@clubmed.com / password123 - Jean Plombier (Plomberie)")
+  console.log("📧 electricien@clubmed.com / password123 - Marie Électricienne (Électricité)")
+  console.log("📧 climatisation@clubmed.com / password123 - Antoine Climatisation (Climatisation)")
+  console.log("📧 chauffage@clubmed.com / password123 - Julien Thermique (Chauffage)")
+  console.log("📧 menuiserie@clubmed.com / password123 - Claire Menuisière (Menuiserie)")
+  console.log("📧 peinture@clubmed.com / password123 - Marc Peintre (Peinture)")
+  console.log("📧 nettoyage@clubmed.com / password123 - Sarah Nettoyage (Nettoyage)")
+  console.log("📧 jardinier@clubmed.com / password123 - Thomas Jardinier (Jardinage)")
+  console.log("📧 securite@clubmed.com / password123 - Emma Sécurité (Sécurité)")
+  console.log("📧 ascenseur@clubmed.com / password123 - Lucas Ascenseurs (Ascenseurs)")
+  console.log("📧 piscine@clubmed.com / password123 - Nina Piscines (Piscines)")
+  console.log("📧 informatique@clubmed.com / password123 - Alexandre IT (Informatique)")
   console.log(`\n🛠️ ${interventionsData.length} interventions créées pour les statistiques`)
   console.log("🌐 Accédez à http://localhost:3000 pour tester")
 }
