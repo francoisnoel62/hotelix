@@ -16,7 +16,7 @@ interface DashboardSidebarProps {
 export function DashboardSidebar({ user, onLogout, onProfileUpdate, mobile = false, onClose }: DashboardSidebarProps) {
   const menuItems = [
     { icon: Hotel, label: 'Accueil', href: '/dashboard' },
-    { icon: Users, label: 'Utilisateurs', href: '/dashboard/users' },
+    { icon: Users, label: 'Techniciens', href: '/dashboard/techniciens' },
     { icon: Calendar, label: 'Réservations', href: '/dashboard/bookings' },
     { icon: Settings, label: 'Paramètres', href: '/dashboard/settings' },
   ]

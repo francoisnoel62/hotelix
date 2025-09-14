@@ -84,6 +84,8 @@ model User {
   hotel                Hotel          @relation(fields: [hotelId], references: [id])
   interventionsDemandees Intervention[] @relation("InterventionDemandeur")
   interventionsAssignees Intervention[] @relation("InterventionAssigne")
+  messagesEnvoyes      Message[]      @relation("MessageEnvoye")
+  messagesRecus        Message[]      @relation("MessageRecu")
 }
 
 model Hotel {
@@ -96,6 +98,7 @@ model Hotel {
   users         User[]
   interventions Intervention[]
   zones         Zone[]
+  messages      Message[]
 }
 
 model Zone {
@@ -149,4 +152,21 @@ model Intervention {
 
   sousZoneId  Int?
   sousZone    SousZone? @relation(fields: [sousZoneId], references: [id])
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  contenu     String
+  dateEnvoi   DateTime @default(now())
+  lu          Boolean  @default(false)
+
+  // Relations
+  expediteurId   Int
+  expediteur     User @relation("MessageEnvoye", fields: [expediteurId], references: [id])
+
+  destinataireId Int
+  destinataire   User @relation("MessageRecu", fields: [destinataireId], references: [id])
+
+  hotelId        Int
+  hotel          Hotel @relation(fields: [hotelId], references: [id])
 }
