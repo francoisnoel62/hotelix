@@ -16,12 +16,19 @@ interface InterventionsListProps {
   interventions: InterventionWithRelations[]
   user: UserSession
   onRefresh: () => void
+  showForm?: boolean
+  onShowFormChange?: (show: boolean) => void
 }
 
-export function InterventionsList({ interventions, user, onRefresh }: InterventionsListProps) {
+export function InterventionsList({
+  interventions,
+  user,
+  onRefresh,
+  showForm = false,
+  onShowFormChange
+}: InterventionsListProps) {
   const [filter, setFilter] = useState('')
   const [statutFilter, setStatutFilter] = useState<StatutIntervention | 'ALL'>('ALL')
-  const [showForm, setShowForm] = useState(false)
   const [editingIntervention, setEditingIntervention] = useState<InterventionWithRelations | null>(null)
   const [techniciens, setTechniciens] = useState<TechnicienOption[]>([])
   const [loadingActions, setLoadingActions] = useState<{ [key: number]: 'status' | 'technician' | null }>({})
@@ -144,14 +151,6 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
           <h3 className="text-lg font-medium text-gray-900">
             {user.role === 'TECHNICIEN' ? 'Mes interventions' : 'Interventions'}
           </h3>
-          {(user.role === 'MANAGER' || user.role === 'STAFF') && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              + Nouvelle intervention
-            </button>
-          )}
         </div>
 
         {/* Filtres - Responsive */}
@@ -306,10 +305,10 @@ export function InterventionsList({ interventions, user, onRefresh }: Interventi
         <InterventionForm
           user={user}
           onSuccess={() => {
-            setShowForm(false)
+            onShowFormChange?.(false)
             onRefresh()
           }}
-          onCancel={() => setShowForm(false)}
+          onCancel={() => onShowFormChange?.(false)}
         />
       )}
 

@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserSession | null>(null)
   const [interventions, setInterventions] = useState<InterventionWithRelations[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showInterventionForm, setShowInterventionForm] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -116,16 +117,30 @@ export default function DashboardPage() {
       <div className="space-y-6">
         {/* Welcome Section */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Bienvenue, {user.name || user.email} !
-          </h2>
-          <p className="text-gray-600">
-            Vous êtes connecté en tant que {getRoleDisplayName(user.role)}
-            {user.role === 'TECHNICIEN' && user.specialite && (
-              <span> - Spécialité: {user.specialite}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Bienvenue, {user.name || user.email} !
+              </h2>
+              <p className="text-gray-600">
+                Vous êtes connecté en tant que {getRoleDisplayName(user.role)}
+                {user.role === 'TECHNICIEN' && user.specialite && (
+                  <span> - Spécialité: {user.specialite}</span>
+                )}
+                {' '}de l&apos;hôtel <span className="font-semibold">{user.hotel.nom}</span>.
+              </p>
+            </div>
+            {(user.role === 'MANAGER' || user.role === 'STAFF') && (
+              <div className="flex-shrink-0">
+                <button
+                  onClick={() => setShowInterventionForm(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md text-sm font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  + Nouvelle intervention
+                </button>
+              </div>
             )}
-            {' '}de l&apos;hôtel <span className="font-semibold">{user.hotel.nom}</span>.
-          </p>
+          </div>
         </div>
 
         {/* Quick Stats */}
@@ -152,6 +167,8 @@ export default function DashboardPage() {
           interventions={interventions}
           user={user}
           onRefresh={refreshInterventions}
+          showForm={showInterventionForm}
+          onShowFormChange={setShowInterventionForm}
         />
       </div>
     </DashboardLayout>
