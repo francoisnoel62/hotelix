@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { TechnicianWithDetails, TechnicianListItem, TechnicianStats } from '@/lib/types/technician'
 import { StatutIntervention } from '@prisma/client'
-import { StatsService } from '@/lib/services/stats'
+import { getInterventionCounts, getTechnicianStatus, getTechnicianStatsAction, invalidateStatsCache } from '@/app/actions/stats'
 
 interface ActionResult<T = unknown> {
   success: boolean
@@ -37,12 +37,12 @@ export async function getTechnicians(hotelId: number): Promise<TechnicianListIte
     // Utiliser Promise.all pour calculer les statuts en parallèle
     const techniciensWithStats = await Promise.all(
       techniciens.map(async (technicien) => {
-        const counts = await StatsService.getInterventionCounts({
+        const counts = await getInterventionCounts({
           hotelId,
           technicienId: technicien.id
         })
 
-        const statut = await StatsService.getTechnicianStatus(technicien.id)
+        const statut = await getTechnicianStatus(technicien.id)
 
         return {
           id: technicien.id,
@@ -123,7 +123,7 @@ export async function getTechnicianStats(
   periodDays: number = 30
 ): Promise<TechnicianStats | null> {
   try {
-    return await StatsService.getTechnicianStats(technicienId, periodDays)
+    return await getTechnicianStatsAction(technicienId, periodDays)
   } catch (error) {
     console.error('Erreur récupération statistiques technicien:', error)
     return null
@@ -211,7 +211,7 @@ export async function assignInterventionToTechnician(
     })
 
     // Invalider le cache pour l'hôtel et le technicien
-    StatsService.invalidateCache(manager.hotelId, technicienId)
+    await invalidateStatsCache(manager.hotelId, technicienId)
 
     // Revalidation complète pour synchronisation
     revalidatePath('/dashboard')

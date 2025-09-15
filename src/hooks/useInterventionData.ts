@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { InterventionWithRelations } from '@/lib/types/intervention'
 import { GlobalStats } from '@/lib/services/stats'
 import { getInterventions } from '@/app/actions/intervention'
-import { StatsService } from '@/lib/services/stats'
+import { getGlobalStats } from '@/app/actions/stats'
 
 interface UseInterventionDataReturn {
   interventions: InterventionWithRelations[]
@@ -36,7 +36,7 @@ export function useInterventionData(
 
       // Charger les stats si demandées
       if (includeStats) {
-        const statsData = await StatsService.getGlobalStats(hotelId)
+        const statsData = await getGlobalStats(hotelId)
         setStats(statsData)
       }
     } catch (error) {

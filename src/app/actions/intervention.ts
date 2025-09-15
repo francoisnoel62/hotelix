@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { InterventionFormData } from '@/lib/types/intervention'
 import { StatutIntervention } from '@prisma/client'
-import { StatsService } from '@/lib/services/stats'
+import { invalidateStatsCache } from '@/app/actions/stats'
 
 interface ActionResult<T = unknown> {
   success: boolean
@@ -91,7 +91,7 @@ export async function updateInterventionStatut(
     })
 
     // Invalider le cache avant la revalidation
-    StatsService.invalidateCache(intervention.hotelId, intervention.assigneId || undefined)
+    await invalidateStatsCache(intervention.hotelId, intervention.assigneId || undefined)
 
     // Revalidation complète pour synchronisation
     revalidatePath('/dashboard')
@@ -141,7 +141,9 @@ export async function assignerIntervention(
 
       // Invalider le cache pour l'hôtel et l'ancien technicien
       const oldTechnicienId = intervention.assigneId
-      StatsService.invalidateCache(intervention.hotelId, oldTechnicienId || undefined)
+      if (oldTechnicienId) {
+        await invalidateStatsCache(intervention.hotelId, oldTechnicienId)
+      }
 
       // Revalidation complète pour synchronisation
       revalidatePath('/dashboard')
@@ -177,10 +179,10 @@ export async function assignerIntervention(
 
     // Invalider le cache pour l'hôtel et les deux techniciens (ancien et nouveau)
     const oldTechnicienId = intervention.assigneId
-    StatsService.invalidateCache(intervention.hotelId, oldTechnicienId || undefined)
-    if (technicienId !== oldTechnicienId) {
-      StatsService.invalidateCache(intervention.hotelId, technicienId)
+    if (oldTechnicienId) {
+      await invalidateStatsCache(intervention.hotelId, oldTechnicienId)
     }
+    await invalidateStatsCache(intervention.hotelId, technicienId)
 
     // Revalidation complète pour synchronisation
     revalidatePath('/dashboard')
@@ -239,7 +241,8 @@ export async function getInterventions(
 
     // Si les stats sont demandées, les ajouter à la réponse
     if (includeStats) {
-      const stats = await StatsService.getGlobalStats(hotelId)
+      const { getGlobalStats } = await import('@/app/actions/stats')
+      const stats = await getGlobalStats(hotelId)
       // Ajouter les stats au contexte de retour (pattern à définir)
     }
 
