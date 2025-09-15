@@ -4,41 +4,37 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { UserSession } from '@/lib/types/auth'
-import { TechnicianListItem } from '@/lib/types/technician'
 import { logoutAction } from '@/app/actions/auth'
-import { getTechnicians } from '@/app/actions/technician'
 import { TechniciansList } from '@/components/technicians/technicians-list'
+import { useTechniciansData } from '@/hooks/useTechnicianData'
 
 export default function TechniciensPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserSession | null>(null)
-  const [technicians, setTechnicians] = useState<TechnicianListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+
+  const {
+    technicians,
+    isLoading,
+    error,
+    refresh
+  } = useTechniciansData(user?.hotelId || 0)
 
   useEffect(() => {
-    const loadData = async () => {
-      const userData = localStorage.getItem('user')
-      if (userData) {
-        const parsedUser = JSON.parse(userData)
-        setUser(parsedUser)
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
 
-        // Seuls les managers peuvent voir tous les techniciens
-        if (parsedUser.role === 'MANAGER') {
-          const techniciensData = await getTechnicians(parsedUser.hotelId)
-          setTechnicians(techniciensData)
-        } else {
-          // Les autres rôles ne peuvent pas accéder à cette page
-          router.push('/dashboard')
-          return
-        }
-      } else {
-        router.push('/auth')
+      // Seuls les managers peuvent voir tous les techniciens
+      if (parsedUser.role !== 'MANAGER') {
+        // Les autres rôles ne peuvent pas accéder à cette page
+        router.push('/dashboard')
         return
       }
-      setIsLoading(false)
+    } else {
+      router.push('/auth')
+      return
     }
-
-    loadData()
   }, [router])
 
   const handleLogout = async () => {
@@ -55,12 +51,6 @@ export default function TechniciensPage() {
     setUser(updatedUser)
   }
 
-  const refreshTechnicians = async () => {
-    if (user) {
-      const techniciensData = await getTechnicians(user.hotelId)
-      setTechnicians(techniciensData)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -144,7 +134,7 @@ export default function TechniciensPage() {
         <TechniciansList
           technicians={technicians}
           user={user}
-          onRefresh={refreshTechnicians}
+          onRefresh={refresh}
         />
       </div>
     </DashboardLayout>

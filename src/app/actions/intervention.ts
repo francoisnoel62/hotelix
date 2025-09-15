@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { InterventionFormData } from '@/lib/types/intervention'
 import { StatutIntervention } from '@prisma/client'
+import { StatsService } from '@/lib/services/stats'
 
 interface ActionResult<T = unknown> {
   success: boolean
@@ -89,7 +90,13 @@ export async function updateInterventionStatut(
       }
     })
 
+    // Invalider le cache avant la revalidation
+    StatsService.invalidateCache(intervention.hotelId, intervention.assigneId || undefined)
+
+    // Revalidation complète pour synchronisation
     revalidatePath('/dashboard')
+    revalidatePath('/dashboard/techniciens')
+    revalidatePath(`/dashboard/techniciens/[id]`, 'page')
 
     return {
       success: true,
@@ -119,6 +126,11 @@ export async function assignerIntervention(
 
     // Si technicienId est 0, on désassigne
     if (technicienId === 0) {
+      const intervention = await prisma.intervention.findUnique({ where: { id: interventionId } })
+      if (!intervention) {
+        return { success: false, error: 'Intervention non trouvée' }
+      }
+
       const updated = await prisma.intervention.update({
         where: { id: interventionId },
         data: {
@@ -127,7 +139,14 @@ export async function assignerIntervention(
         }
       })
 
+      // Invalider le cache pour l'hôtel et l'ancien technicien
+      const oldTechnicienId = intervention.assigneId
+      StatsService.invalidateCache(intervention.hotelId, oldTechnicienId || undefined)
+
+      // Revalidation complète pour synchronisation
       revalidatePath('/dashboard')
+      revalidatePath('/dashboard/techniciens')
+      revalidatePath(`/dashboard/techniciens/[id]`, 'page')
 
       return {
         success: true,
@@ -142,6 +161,12 @@ export async function assignerIntervention(
       return { success: false, error: 'Technicien non trouvé ou rôle invalide' }
     }
 
+    // Récupérer l'intervention pour obtenir l'ancien technicien
+    const intervention = await prisma.intervention.findUnique({ where: { id: interventionId } })
+    if (!intervention) {
+      return { success: false, error: 'Intervention non trouvée' }
+    }
+
     const updated = await prisma.intervention.update({
       where: { id: interventionId },
       data: {
@@ -150,7 +175,17 @@ export async function assignerIntervention(
       }
     })
 
+    // Invalider le cache pour l'hôtel et les deux techniciens (ancien et nouveau)
+    const oldTechnicienId = intervention.assigneId
+    StatsService.invalidateCache(intervention.hotelId, oldTechnicienId || undefined)
+    if (technicienId !== oldTechnicienId) {
+      StatsService.invalidateCache(intervention.hotelId, technicienId)
+    }
+
+    // Revalidation complète pour synchronisation
     revalidatePath('/dashboard')
+    revalidatePath('/dashboard/techniciens')
+    revalidatePath(`/dashboard/techniciens/[id]`, 'page')
 
     return {
       success: true,
@@ -166,7 +201,12 @@ export async function assignerIntervention(
   }
 }
 
-export async function getInterventions(hotelId: number, userId: number, userRole: string) {
+export async function getInterventions(
+  hotelId: number,
+  userId: number,
+  userRole: string,
+  includeStats: boolean = false
+) {
   try {
     const whereClause: Record<string, unknown> = { hotelId }
 
@@ -196,6 +236,12 @@ export async function getInterventions(hotelId: number, userId: number, userRole
         dateCreation: 'desc'
       }
     })
+
+    // Si les stats sont demandées, les ajouter à la réponse
+    if (includeStats) {
+      const stats = await StatsService.getGlobalStats(hotelId)
+      // Ajouter les stats au contexte de retour (pattern à définir)
+    }
 
     return interventions
   } catch (error) {
