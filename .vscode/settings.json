@@ -1,0 +1,22 @@
+{
+  "vitest.enable": true,
+  "vitest.commandLine": "npm run test",
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.associations": {
+    "*.test.ts": "typescript",
+    "*.test.tsx": "typescriptreact"
+  },
+  "jest.disabledWorkspaceFolders": ["hotelix"],
+  "testing.automaticallyOpenPeekView": "never",
+  "search.exclude": {
+    "**/.next": true,
+    "**/node_modules": true,
+    "**/coverage": true,
+    "**/test_db_data": true
+  }
+}

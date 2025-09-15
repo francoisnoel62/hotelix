@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "ZixuanChen.vitest-explorer",
+    "ms-vscode.vscode-typescript-next",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-eslint",
+    "Prisma.prisma",
+    "ms-vscode-remote.remote-containers",
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense"
+  ]
+}

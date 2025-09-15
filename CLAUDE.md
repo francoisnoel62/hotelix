@@ -14,6 +14,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` - Run ESLint
 - `npm run seed` - Seed database using `prisma/seed.ts`
 
+## Testing Commands
+
+- `npm test` - Run all tests (36 tests covering auth, business logic, DB)
+- `npm run test:watch` - Run tests in watch mode for development
+- `npm run test:ui` - Open Vitest UI interface
+- `npm run test:coverage` - Generate test coverage report
+- `npm test -- --run --pool=forks --poolOptions.forks.singleFork=true` - Sequential execution (recommended)
+
+## Test Database Commands
+
+- `docker-compose -f docker-compose.test.yml up -d` - Start test database
+- `DATABASE_URL=postgresql://test:test@localhost:5433/hotelix_test npx prisma db push` - Push schema to test DB
+- `docker-compose -f docker-compose.test.yml down` - Stop test database
+
 ## Architecture & Stack
 
 - **Framework**: Next.js 15 with App Router
@@ -22,6 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Styling**: Tailwind CSS v4 with shadcn/ui components
 - **UI Components**: Radix UI primitives with shadcn/ui (New York style)
 - **Icons**: Lucide React
+- **Testing**: Vitest v2.1.9 with React Testing Library and Docker PostgreSQL
 - **Build Tool**: Turbopack
 
 ## Database Schema
