@@ -18,5 +18,9 @@
     "**/node_modules": true,
     "**/coverage": true,
     "**/test_db_data": true
+  },
+  "files.watcherExclude": {
+    "**/coverage/**": true,
+    "**/test_db_data/**": true
   }
 }

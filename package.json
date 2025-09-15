@@ -10,9 +10,14 @@
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
     "test": "vitest",
+    "test:unit": "vitest --run src/app/actions/__tests__ src/lib",
+    "test:integration": "vitest --run src/test/__tests__",
+    "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "test:watch": "vitest --watch"
+    "test:db:setup": "docker-compose -f docker-compose.test.yml up -d && npm run db:test:push",
+    "test:db:teardown": "docker-compose -f docker-compose.test.yml down",
+    "db:test:push": "cross-env DATABASE_URL=postgresql://test:test@localhost:5433/hotelix_test npx prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^6.16.1",
@@ -43,6 +48,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^2.1.9",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "jsdom": "^24.1.0",
