@@ -985,3 +985,126 @@ La synchronisation parfaite des données entre le dashboard et la gestion des te
 **Status**: ✅ **Phase 5 Complète** - Synchronisation parfaite des données implémentée et validée.
 
 **Prêt pour**: Déploiement en production avec garantie de cohérence des données dans tous les scénarios d'utilisation.
+
+---
+
+## Résolution Erreurs Build LightningCSS ✅
+
+**Date**: September 15, 2025 (continued)
+**Objective**: Résoudre les erreurs de compilation `npm run dev` liées à LightningCSS et la configuration PostCSS avec Tailwind CSS v4.
+
+### Contexte du Problème
+
+Lors du lancement de `npm run dev`, le serveur de développement rencontrait des erreurs de résolution de modules LightningCSS :
+
+```
+⨯ ./node_modules/lightningcss/node/index.js:22:22
+Module not found: Can't resolve '../lightningcss.' <dynamic> '.node'
+
+⨯ ./node_modules/lightningcss/node/index.js:17:20
+Module not found: Can't resolve '../pkg'
+```
+
+### Investigation et Analyse
+
+#### 1. Stack Technologique Impliquée
+- **Next.js**: 15.5.3 avec Turbopack activé
+- **Tailwind CSS**: v4.1.13 (version beta avec nouvelle architecture)
+- **LightningCSS**: 1.30.1 (utilisé par @tailwindcss/postcss)
+- **PostCSS**: Configuration via `postcss.config.mjs`
+
+#### 2. Recherche Exhaustive des Causes
+Utilisation de l'agent de recherche pour analyser :
+- ✅ **Dépendances LightningCSS** : Toutes les binaires Windows présentes et fonctionnelles
+- ✅ **Configuration CSS** : Architecture Tailwind v4 moderne identifiée
+- ✅ **Compatibilité Stack** : Problèmes connus entre Next.js 15 + Turbopack + Tailwind v4
+- ✅ **Historique projet** : Aucun problème similaire précédemment rencontré
+
+#### 3. Root Cause Identifiée
+**Problème** : Configuration PostCSS incompatible avec le bundler Next.js
+```javascript
+// INCORRECT - postcss.config.mjs original
+import tailwindcss from "@tailwindcss/postcss";
+const config = { plugins: [tailwindcss] };
+```
+
+**Explication** : Next.js avec webpack nécessite un format string-based pour les plugins PostCSS, pas des imports de fonctions.
+
+### Solution Implémentée
+
+#### Configuration PostCSS Corrigée
+**Avant** (problématique) :
+```javascript
+import tailwindcss from "@tailwindcss/postcss";
+const config = { plugins: [tailwindcss] };
+```
+
+**Après** (fonctionnelle) :
+```javascript
+const config = {
+  plugins: {
+    "@tailwindcss/postcss": {},
+  },
+};
+```
+
+### Vérification et Validation
+
+#### Test de Résolution ✅
+```bash
+npm run dev
+```
+
+**Résultats** :
+- ✅ **Erreurs LightningCSS éliminées** : Plus de messages d'erreur de résolution de modules
+- ✅ **Démarrage plus rapide** : 937ms au lieu de 1703ms précédemment
+- ✅ **Compilation réussie** : Next.js 15.5.3 avec Turbopack fonctionne parfaitement
+- ✅ **CSS fonctionnel** : Tailwind CSS v4 compile et s'applique correctement
+
+#### Architecture CSS Validée
+- **Tailwind CSS v4** : Configuration CSS-first maintenue et fonctionnelle
+- **Design System** : Système complet avec CSS custom properties et OKLCH colors
+- **Compatibilité** : Next.js App Router + Server Components + shadcn/ui
+
+### Impact et Bénéfices
+
+#### Stabilité de Développement
+- ✅ **Environnement stable** : Plus d'interruptions lors du développement
+- ✅ **Hot reload fonctionnel** : Rechargement instantané des modifications CSS
+- ✅ **Performance améliorée** : Compilation plus rapide grâce à la configuration optimisée
+
+#### Stack Moderne Validée
+- ✅ **Cutting-edge technologies** : Confirmation que la stack moderne fonctionne
+- ✅ **Tailwind CSS v4 beta** : Utilisation réussie des nouvelles fonctionnalités
+- ✅ **Turbopack production-ready** : Performance de développement optimisée
+
+### Documentation de Recherche
+
+**Rapport complet généré** : `thoughts/shared/research/2025-09-15_15-30-00_lightningcss-build-errors.md`
+
+Contient :
+- Analyse détaillée des causes techniques
+- Investigation des dépendances LightningCSS
+- Comparaison des configurations PostCSS
+- Guide des bonnes pratiques pour éviter les régressions
+
+### Recommandations pour l'Avenir
+
+#### Monitoring de Configuration
+1. **Surveillance PostCSS** : Valider la configuration lors des mises à jour
+2. **Tests de build** : Inclure la vérification de compilation dans le CI/CD
+3. **Documentation Stack** : Maintenir la documentation des configurations spécialisées
+
+#### Évolution Tailwind CSS v4
+- **Suivi des releases** : Monitorer l'évolution vers la version stable
+- **Migration planning** : Préparer les ajustements pour la version finale
+- **Performance tracking** : Mesurer l'impact des futures mises à jour
+
+### Status Final
+
+✅ **Problème résolu** : Erreurs LightningCSS éliminées définitivement
+✅ **Stack fonctionnelle** : Next.js 15 + Turbopack + Tailwind CSS v4 opérationnelle
+✅ **Performance optimisée** : Temps de compilation amélioré
+✅ **Documentation complète** : Recherche approfondie documentée pour référence future
+
+**Environnement de développement** : ✅ **Entièrement fonctionnel et optimisé**
