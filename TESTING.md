@@ -29,11 +29,15 @@ Ce document détaille l'infrastructure de tests mise en place pour Hotelix et ex
 ## 🚀 Commandes Rapides
 
 ```bash
-# Tests complets (recommandé)
+# Tests complets (recommandé pour CI)
 npm test -- --run --pool=forks --poolOptions.forks.singleFork=true
 
 # Tests en mode watch (développement)
 npm run test:watch
+
+# Tests par type
+npm run test:unit              # Tests unitaires seulement
+npm run test:integration       # Tests d'intégration seulement
 
 # Interface utilisateur des tests
 npm run test:ui
@@ -66,13 +70,14 @@ services:
 ### Gestion de la Base de Test
 
 ```bash
-# Démarrer la base de données de test
+# Commandes automatisées (recommandé)
+npm run test:db:setup          # Démarrer + pousser schéma
+npm run test:db:teardown       # Arrêter la base
+npm run db:test:push           # Pousser schéma seulement
+
+# Commandes manuelles Docker
 docker-compose -f docker-compose.test.yml up -d
-
-# Pousser le schéma Prisma
 DATABASE_URL=postgresql://test:test@localhost:5433/hotelix_test npx prisma db push
-
-# Arrêter la base de données
 docker-compose -f docker-compose.test.yml down
 ```
 
@@ -304,11 +309,56 @@ npm test -- --watch src/app/actions/__tests__/auth.test.ts
 - Tests de stress sur la BDD
 - Monitoring des métriques
 
-### CI/CD Integration
-- GitHub Actions automatiques
-- Tests sur chaque PR
-- Rapports de couverture
-- Déploiement conditionnel
+## 🔄 CI/CD Integration (Phase 4 ✅)
+
+### GitHub Actions
+Le workflow automatique est configuré dans `.github/workflows/test.yml` :
+
+```yaml
+name: Tests
+on:
+  push: { branches: [ master, main ] }
+  pull_request: { branches: [ master, main ] }
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: hotelix_test
+        ports: [ 5433:5432 ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+      - run: npm ci
+      - run: npx prisma db push
+      - run: npm run test:coverage
+```
+
+### Workflow de Développement
+```bash
+# 1. Démarrer l'environnement de test
+npm run test:db:setup
+
+# 2. Développer avec tests en continu
+npm run test:watch
+
+# 3. Vérifier la couverture avant commit
+npm run test:coverage -- --run --pool=forks --poolOptions.forks.singleFork=true
+
+# 4. Nettoyer l'environnement
+npm run test:db:teardown
+```
+
+### Intégration VSCode
+Configuration automatique dans `.vscode/settings.json` :
+- Extension Vitest activée
+- Commandes de test intégrées
+- Exclusions de fichiers de couverture
 
 ## 📚 Ressources
 

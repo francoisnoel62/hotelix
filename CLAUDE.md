@@ -20,12 +20,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run test:watch` - Run tests in watch mode for development
 - `npm run test:ui` - Open Vitest UI interface
 - `npm run test:coverage` - Generate test coverage report
+- `npm run test:unit` - Run unit tests only (Server Actions and validations)
+- `npm run test:integration` - Run integration tests only (database relationships)
 - `npm test -- --run --pool=forks --poolOptions.forks.singleFork=true` - Sequential execution (recommended)
 
 ## Test Database Commands
 
+- `npm run test:db:setup` - Start test database and push schema
+- `npm run test:db:teardown` - Stop test database
+- `npm run db:test:push` - Push schema to test database manually
 - `docker-compose -f docker-compose.test.yml up -d` - Start test database
-- `DATABASE_URL=postgresql://test:test@localhost:5433/hotelix_test npx prisma db push` - Push schema to test DB
 - `docker-compose -f docker-compose.test.yml down` - Stop test database
 
 ## Architecture & Stack

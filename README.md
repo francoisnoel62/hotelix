@@ -281,6 +281,10 @@ npm run test:ui
 # Couverture de code
 npm run test:coverage
 
+# Tests par catégorie
+npm run test:unit              # Tests unitaires (Server Actions, validations)
+npm run test:integration       # Tests d'intégration (base de données)
+
 # Tests spécifiques
 npm test src/app/actions/__tests__/auth.test.ts
 npm test src/app/actions/__tests__/intervention.test.ts
@@ -289,14 +293,31 @@ npm test src/test/__tests__/database-relationships.test.ts
 
 ### Base de Données de Test
 ```bash
-# Démarrer la base de données de test Docker
+# Commandes automatisées (recommandé)
+npm run test:db:setup          # Démarrer + configurer la base de test
+npm run test:db:teardown       # Arrêter la base de test
+npm run db:test:push           # Pousser le schéma seulement
+
+# Commandes manuelles Docker
 docker-compose -f docker-compose.test.yml up -d
-
-# Pousser le schéma vers la base de test
 DATABASE_URL=postgresql://test:test@localhost:5433/hotelix_test npx prisma db push
-
-# Arrêter la base de données de test
 docker-compose -f docker-compose.test.yml down
+```
+
+### CI/CD Integration
+Le projet inclut une pipeline GitHub Actions automatique (`.github/workflows/test.yml`) :
+
+- ✅ **Tests automatiques** sur chaque push et pull request
+- ✅ **Base de données PostgreSQL** automatiquement configurée
+- ✅ **Rapports de couverture** générés à chaque build
+- ✅ **Intégration VSCode** avec extension Vitest
+
+```bash
+# Simulation locale de la CI/CD
+npm ci
+npm run test:db:setup
+npm run test:coverage -- --run --pool=forks --poolOptions.forks.singleFork=true
+npm run test:db:teardown
 ```
 
 ### Lancer les Vérifications Qualité
