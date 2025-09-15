@@ -52,7 +52,7 @@ next-env.d.ts
 .env.test.local
 .env.production.local
 
-# testing (Jest + coverage)
+# testing (Vitest + coverage)
 /coverage
 /coverage/
 *.lcov
@@ -61,8 +61,11 @@ next-env.d.ts
 /blob-report/
 /playwright/.cache/
 
+# Docker test database volumes
+test_db_data/
+
 # IDE / Editors
-.vscode/
+# .vscode/ - Keep VSCode settings for team consistency
 .idea/
 *.swp
 *.swo

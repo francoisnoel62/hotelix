@@ -47,6 +47,7 @@ Le système propose une interface intuitive pour la création, l'assignation et 
 - **Icônes** : Lucide React
 - **Authentification** : Server Actions avec bcryptjs
 - **Formulaires** : React Hook Form
+- **Tests** : Vitest avec React Testing Library
 - **Runtime** : Node.js
 
 ## 🧩 Architecture du Projet
@@ -65,14 +66,20 @@ hotelix/
 │   │   ├── dashboard/        # Interface de gestion
 │   │   ├── interventions/    # Gestion des interventions
 │   │   └── ui/               # shadcn/ui components
-│   └── lib/                  # Utilitaires et configurations
-│       ├── types/            # Types TypeScript
-│       ├── validations/      # Schémas de validation
-│       └── prisma.ts         # Client Prisma singleton
+│   ├── lib/                  # Utilitaires et configurations
+│   │   ├── types/            # Types TypeScript
+│   │   ├── validations/      # Schémas de validation
+│   │   └── prisma.ts         # Client Prisma singleton
+│   └── test/                 # Infrastructure de tests
+│       ├── setup.ts          # Configuration test environnement
+│       ├── db-utils.ts       # Utilitaires base de données test
+│       └── __tests__/        # Tests d'intégration
 ├── prisma/                   # Base de données
 │   ├── schema.prisma         # Schéma de données
 │   └── seed.ts              # Données d'exemple
 ├── public/                   # Assets statiques
+├── vitest.config.mts         # Configuration Vitest
+├── docker-compose.test.yml   # Base de données test Docker
 └── package.json             # Dépendances et scripts
 ```
 
@@ -81,6 +88,7 @@ hotelix/
 ### Prérequis Techniques
 - **Node.js** ≥ 18.0.0
 - **PostgreSQL** ≥ 14.0
+- **Docker** (pour les tests)
 - **npm** ou **yarn**
 - **Git**
 
@@ -143,14 +151,29 @@ npx prisma generate
 
 # Visualiser la base de données
 npx prisma studio
+
+# Tests unitaires et d'intégration
+npm test
+
+# Tests avec interface utilisateur
+npm run test:ui
+
+# Tests avec couverture de code
+npm run test:coverage
+
+# Tests en mode watch
+npm run test:watch
 ```
 
 ## 🔧 Configuration de Base de Données
 
 ### Variables d'Environnement (.env)
 ```env
-# Base de données PostgreSQL
+# Base de données PostgreSQL (production/développement)
 DATABASE_URL="postgresql://username:password@localhost:5432/hotelix?schema=public"
+
+# Base de données de test (automatiquement configurée)
+# DATABASE_URL_TEST="postgresql://test:test@localhost:5433/hotelix_test"
 ```
 
 ### Données de Test (Seed)
@@ -237,7 +260,67 @@ git push origin feature/nouvelle-fonctionnalite
 
 ## ✅ Tests & Qualité
 
-### Lancer les Vérifications
+### Infrastructure de Tests
+Le projet dispose d'une **infrastructure de tests complète** avec **36 tests passing** :
+
+- **Tests d'authentification** : 17 tests (Server Actions, validation, sécurité)
+- **Tests de logique métier** : 11 tests (interventions, permissions, assignations)
+- **Tests de base de données** : 8 tests (relations, contraintes, isolation)
+
+### Lancer les Tests
+```bash
+# Tous les tests (recommandé : exécution séquentielle)
+npm test -- --run --pool=forks --poolOptions.forks.singleFork=true
+
+# Tests rapides en mode watch
+npm run test:watch
+
+# Interface utilisateur pour les tests
+npm run test:ui
+
+# Couverture de code
+npm run test:coverage
+
+# Tests par catégorie
+npm run test:unit              # Tests unitaires (Server Actions, validations)
+npm run test:integration       # Tests d'intégration (base de données)
+
+# Tests spécifiques
+npm test src/app/actions/__tests__/auth.test.ts
+npm test src/app/actions/__tests__/intervention.test.ts
+npm test src/test/__tests__/database-relationships.test.ts
+```
+
+### Base de Données de Test
+```bash
+# Commandes automatisées (recommandé)
+npm run test:db:setup          # Démarrer + configurer la base de test
+npm run test:db:teardown       # Arrêter la base de test
+npm run db:test:push           # Pousser le schéma seulement
+
+# Commandes manuelles Docker
+docker-compose -f docker-compose.test.yml up -d
+DATABASE_URL=postgresql://test:test@localhost:5433/hotelix_test npx prisma db push
+docker-compose -f docker-compose.test.yml down
+```
+
+### CI/CD Integration
+Le projet inclut une pipeline GitHub Actions automatique (`.github/workflows/test.yml`) :
+
+- ✅ **Tests automatiques** sur chaque push et pull request
+- ✅ **Base de données PostgreSQL** automatiquement configurée
+- ✅ **Rapports de couverture** générés à chaque build
+- ✅ **Intégration VSCode** avec extension Vitest
+
+```bash
+# Simulation locale de la CI/CD
+npm ci
+npm run test:db:setup
+npm run test:coverage -- --run --pool=forks --poolOptions.forks.singleFork=true
+npm run test:db:teardown
+```
+
+### Lancer les Vérifications Qualité
 ```bash
 # ESLint pour la qualité du code
 npm run lint
@@ -247,13 +330,24 @@ npx tsc --noEmit
 
 # Tests Prisma
 npx prisma validate
+
+# Tests complets avec couverture
+npm run test:coverage
 ```
 
 ### Standards de Qualité
 - **ESLint** : Configuration Next.js stricte
 - **TypeScript** : Mode strict activé
-- **Prettier** : Formatage automatique
+- **Vitest** : Framework de tests moderne (3-4x plus rapide que Jest)
+- **React Testing Library** : Tests de composants
+- **Docker** : Isolation des tests de base de données
 - **Convention** : Nommage cohérent (camelCase, PascalCase)
+
+### Couverture de Tests
+- ✅ **Authentification & Sécurité** : Validation, hachage de mots de passe, Server Actions
+- ✅ **Logique Métier** : Permissions basées sur les rôles, gestion des interventions
+- ✅ **Base de Données** : Isolation hôtelière, contraintes relationnelles, intégrité des données
+- ✅ **Validation** : Fonctions de validation côté client et serveur
 
 ## 🗺 Conventions & Guidelines
 
@@ -308,8 +402,8 @@ interface ActionResult<T> {
 
 4. **Développer & Tester**
    - Suivre les conventions existantes
-   - Tester toutes les fonctionnalités
-   - Vérifier avec `npm run lint`
+   - Écrire des tests pour les nouvelles fonctionnalités
+   - Vérifier avec `npm run lint` et `npm test`
 
 5. **Commit & Push**
    ```bash
@@ -332,7 +426,15 @@ interface ActionResult<T> {
 
 ## 📊 Roadmap & Évolutions Prévues
 
+### Version 1.0 ✅ (Complété)
+- [x] Infrastructure de tests complète (36 tests)
+- [x] Tests d'authentification et sécurité
+- [x] Tests de logique métier et permissions
+- [x] Tests de base de données et relations
+- [x] Docker pour isolation des tests
+
 ### Version 1.1 (En développement)
+- [ ] CI/CD avec GitHub Actions
 - [ ] Notifications push en temps réel
 - [ ] Export des données en PDF/Excel
 - [ ] Calendrier de planification des interventions
