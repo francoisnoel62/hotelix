@@ -95,3 +95,6 @@ Thumbs.db
 # Backup files
 *.bak
 *.backup
+
+# Personal folders
+/thoughts/*
