@@ -53,14 +53,3 @@ export async function getTechnicianStatus(technicienId: number): Promise<'DISPON
   }
 }
 
-/**
- * Server Action pour invalider le cache des statistiques
- */
-export async function invalidateStatsCache(hotelId: number, technicienId?: number): Promise<void> {
-  try {
-    StatsService.invalidateCache(hotelId, technicienId)
-  } catch (error) {
-    console.error('Erreur lors de l\'invalidation du cache:', error)
-    throw new Error('Impossible d\'invalider le cache')
-  }
-}

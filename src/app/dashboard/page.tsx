@@ -14,13 +14,14 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserSession | null>(null)
   const [showInterventionForm, setShowInterventionForm] = useState(false)
 
-  // Utiliser le hook unifié au lieu de l'état local
+  // Utiliser le hook unifié avec synchronisation optimiste
   const {
     interventions,
     stats,
     isLoading,
     error,
-    refresh
+    refresh,
+    updateOptimistic
   } = useInterventionData(
     user?.hotelId || 0,
     user?.id || 0,
@@ -160,11 +161,12 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Liste des interventions - utiliser le refresh unifié */}
+        {/* Liste des interventions - avec synchronisation optimiste */}
         <InterventionsList
           interventions={interventions}
           user={user}
           onRefresh={refresh}
+          onOptimisticUpdate={updateOptimistic}
           showForm={showInterventionForm}
           onShowFormChange={setShowInterventionForm}
         />

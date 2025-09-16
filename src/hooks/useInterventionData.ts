@@ -5,6 +5,7 @@ import { InterventionWithRelations } from '@/lib/types/intervention'
 import { GlobalStats } from '@/lib/services/stats'
 import { getInterventions } from '@/app/actions/intervention'
 import { getGlobalStats } from '@/app/actions/stats'
+import { StatutIntervention } from '@prisma/client'
 
 interface UseInterventionDataReturn {
   interventions: InterventionWithRelations[]
@@ -12,6 +13,7 @@ interface UseInterventionDataReturn {
   isLoading: boolean
   error: string | null
   refresh: () => Promise<void>
+  updateOptimistic: (interventionId: number, updates: Partial<InterventionWithRelations>) => void
 }
 
 export function useInterventionData(
@@ -30,14 +32,17 @@ export function useInterventionData(
       setIsLoading(true)
       setError(null)
 
-      // Charger les interventions
-      const interventionsData = await getInterventions(hotelId, userId, userRole)
-      setInterventions(interventionsData)
-
-      // Charger les stats si demandées
+      // Charger les interventions et stats en parallèle
+      const promises = [getInterventions(hotelId, userId, userRole)]
       if (includeStats) {
-        const statsData = await getGlobalStats(hotelId)
-        setStats(statsData)
+        promises.push(getGlobalStats(hotelId))
+      }
+
+      const [interventionsData, statsData] = await Promise.all(promises)
+
+      setInterventions(interventionsData)
+      if (includeStats && statsData) {
+        setStats(statsData as GlobalStats)
       }
     } catch (error) {
       console.error('Erreur chargement données interventions:', error)
@@ -47,9 +52,48 @@ export function useInterventionData(
     }
   }, [hotelId, userId, userRole, includeStats])
 
+  // Fonction pour calculer les stats optimistes
+  const calculateOptimisticStats = useCallback((currentInterventions: InterventionWithRelations[]): GlobalStats => {
+    const total = currentInterventions.length
+    const enCours = currentInterventions.filter(i => i.statut === StatutIntervention.EN_COURS).length
+    const enAttente = currentInterventions.filter(i => i.statut === StatutIntervention.EN_ATTENTE).length
+    const terminees = currentInterventions.filter(i => i.statut === StatutIntervention.TERMINEE).length
+    const annulees = currentInterventions.filter(i => i.statut === StatutIntervention.ANNULEE).length
+    const tauxReussite = total > 0 ? Math.round((terminees / total) * 100) : 0
+
+    return {
+      totalInterventions: total,
+      enCours,
+      enAttente,
+      terminees,
+      annulees,
+      tauxReussite,
+      tempsMoyenResolution: stats?.tempsMoyenResolution || 0
+    }
+  }, [stats])
+
+  // Fonction pour mise à jour optimiste
+  const updateOptimistic = useCallback((interventionId: number, updates: Partial<InterventionWithRelations>) => {
+    setInterventions(current => {
+      const updated = current.map(intervention =>
+        intervention.id === interventionId ? { ...intervention, ...updates } : intervention
+      )
+
+      // Recalculer les stats optimistes si nécessaire
+      if (includeStats && updates.statut) {
+        const optimisticStats = calculateOptimisticStats(updated)
+        setStats(optimisticStats)
+      }
+
+      return updated
+    })
+  }, [includeStats, calculateOptimisticStats])
+
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    if (hotelId > 0 && userId > 0) {
+      loadData()
+    }
+  }, [loadData, hotelId, userId])
 
   const refresh = useCallback(async () => {
     await loadData()
@@ -60,6 +104,7 @@ export function useInterventionData(
     stats,
     isLoading,
     error,
-    refresh
+    refresh,
+    updateOptimistic
   }
 }

@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma'
 import { StatutIntervention } from '@prisma/client'
-import { interventionCache } from '@/lib/cache/interventionCache'
 
 export interface GlobalStats {
   totalInterventions: number
@@ -50,16 +49,9 @@ export interface StatsFilters {
 
 export class StatsService {
   /**
-   * Calcule les statistiques globales d'un hôtel avec cache
+   * Calcule les statistiques globales d'un hôtel
    */
   static async getGlobalStats(hotelId: number, periodDays?: number): Promise<GlobalStats> {
-    // Vérifier le cache en premier
-    const cached = interventionCache.getGlobalStats(hotelId, periodDays)
-    if (cached) {
-      return cached
-    }
-
-    // Calculer si pas en cache
     const dateDebut = periodDays ? new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000) : undefined
 
     const interventions = await prisma.intervention.findMany({
@@ -98,7 +90,7 @@ export class StatsService {
       tempsMoyenResolution = Math.round(tempsTotal / interventionsTerminees.length / (1000 * 60))
     }
 
-    const stats: GlobalStats = {
+    return {
       totalInterventions: total,
       enCours,
       enAttente,
@@ -107,22 +99,12 @@ export class StatsService {
       tauxReussite,
       tempsMoyenResolution
     }
-
-    // Mettre en cache
-    interventionCache.setGlobalStats(hotelId, periodDays, stats)
-
-    return stats
   }
 
   /**
-   * Calcule les statistiques détaillées d'un technicien avec cache
+   * Calcule les statistiques détaillées d'un technicien
    */
   static async getTechnicianStats(technicienId: number, periodDays: number = 30): Promise<TechnicianStats> {
-    // Vérifier le cache
-    const cached = interventionCache.getTechnicianStats(technicienId, periodDays)
-    if (cached) {
-      return cached
-    }
 
     const dateDebut = new Date(Date.now() - periodDays * 24 * 60 * 60 * 1000)
 
@@ -194,18 +176,13 @@ export class StatsService {
       enAttente: interventions.filter(i => i.statut === StatutIntervention.EN_ATTENTE).length
     }
 
-    const stats: TechnicianStats = {
+    return {
       interventionsParJour,
       tempsMoyenIntervention,
       tauxReussite,
       repartitionParType,
       totauxMensuel
     }
-
-    // Mettre en cache
-    interventionCache.setTechnicianStats(technicienId, periodDays, stats)
-
-    return stats
   }
 
   /**
@@ -261,15 +238,6 @@ export class StatsService {
     return 'OCCUPE'
   }
 
-  /**
-   * Invalide le cache après une modification
-   */
-  static invalidateCache(hotelId: number, technicienId?: number): void {
-    interventionCache.invalidateHotelStats(hotelId)
-    if (technicienId) {
-      interventionCache.invalidateTechnicianStats(technicienId)
-    }
-  }
 }
 
 // Export par défaut pour compatibilité

@@ -4,7 +4,6 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { InterventionFormData } from '@/lib/types/intervention'
 import { StatutIntervention } from '@prisma/client'
-import { invalidateStatsCache } from '@/app/actions/stats'
 
 interface ActionResult<T = unknown> {
   success: boolean
@@ -90,14 +89,6 @@ export async function updateInterventionStatut(
       }
     })
 
-    // Invalider le cache avant la revalidation
-    await invalidateStatsCache(intervention.hotelId, intervention.assigneId || undefined)
-
-    // Revalidation complète pour synchronisation
-    revalidatePath('/dashboard')
-    revalidatePath('/dashboard/techniciens')
-    revalidatePath(`/dashboard/techniciens/[id]`, 'page')
-
     return {
       success: true,
       data: updated,
@@ -139,17 +130,6 @@ export async function assignerIntervention(
         }
       })
 
-      // Invalider le cache pour l'hôtel et l'ancien technicien
-      const oldTechnicienId = intervention.assigneId
-      if (oldTechnicienId) {
-        await invalidateStatsCache(intervention.hotelId, oldTechnicienId)
-      }
-
-      // Revalidation complète pour synchronisation
-      revalidatePath('/dashboard')
-      revalidatePath('/dashboard/techniciens')
-      revalidatePath(`/dashboard/techniciens/[id]`, 'page')
-
       return {
         success: true,
         data: updated,
@@ -176,18 +156,6 @@ export async function assignerIntervention(
         statut: StatutIntervention.EN_ATTENTE
       }
     })
-
-    // Invalider le cache pour l'hôtel et les deux techniciens (ancien et nouveau)
-    const oldTechnicienId = intervention.assigneId
-    if (oldTechnicienId) {
-      await invalidateStatsCache(intervention.hotelId, oldTechnicienId)
-    }
-    await invalidateStatsCache(intervention.hotelId, technicienId)
-
-    // Revalidation complète pour synchronisation
-    revalidatePath('/dashboard')
-    revalidatePath('/dashboard/techniciens')
-    revalidatePath(`/dashboard/techniciens/[id]`, 'page')
 
     return {
       success: true,

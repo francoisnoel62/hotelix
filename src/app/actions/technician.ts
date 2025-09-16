@@ -1,10 +1,9 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { TechnicianWithDetails, TechnicianListItem, TechnicianStats } from '@/lib/types/technician'
 import { StatutIntervention } from '@prisma/client'
-import { getInterventionCounts, getTechnicianStatus, getTechnicianStatsAction, invalidateStatsCache } from '@/app/actions/stats'
+import { getInterventionCounts, getTechnicianStatus, getTechnicianStatsAction } from '@/app/actions/stats'
 
 interface ActionResult<T = unknown> {
   success: boolean
@@ -135,8 +134,10 @@ export async function getAvailableInterventions(hotelId: number) {
     const interventions = await prisma.intervention.findMany({
       where: {
         hotelId,
-        statut: StatutIntervention.EN_ATTENTE,
-        assigneId: null
+        OR: [
+          { statut: StatutIntervention.EN_ATTENTE, assigneId: null },
+          { statut: StatutIntervention.EN_COURS, assigneId: null }
+        ]
       },
       include: {
         zone: {
@@ -209,14 +210,6 @@ export async function assignInterventionToTechnician(
         statut: StatutIntervention.EN_ATTENTE
       }
     })
-
-    // Invalider le cache pour l'hôtel et le technicien
-    await invalidateStatsCache(manager.hotelId, technicienId)
-
-    // Revalidation complète pour synchronisation
-    revalidatePath('/dashboard')
-    revalidatePath('/dashboard/techniciens')
-    revalidatePath(`/dashboard/techniciens/[id]`, 'page')
 
     return {
       success: true,
