@@ -89,8 +89,6 @@ export async function updateInterventionStatut(
       }
     })
 
-    revalidatePath('/dashboard')
-
     return {
       success: true,
       data: updated,
@@ -119,6 +117,11 @@ export async function assignerIntervention(
 
     // Si technicienId est 0, on désassigne
     if (technicienId === 0) {
+      const intervention = await prisma.intervention.findUnique({ where: { id: interventionId } })
+      if (!intervention) {
+        return { success: false, error: 'Intervention non trouvée' }
+      }
+
       const updated = await prisma.intervention.update({
         where: { id: interventionId },
         data: {
@@ -126,8 +129,6 @@ export async function assignerIntervention(
           statut: StatutIntervention.EN_ATTENTE
         }
       })
-
-      revalidatePath('/dashboard')
 
       return {
         success: true,
@@ -142,6 +143,12 @@ export async function assignerIntervention(
       return { success: false, error: 'Technicien non trouvé ou rôle invalide' }
     }
 
+    // Récupérer l'intervention pour obtenir l'ancien technicien
+    const intervention = await prisma.intervention.findUnique({ where: { id: interventionId } })
+    if (!intervention) {
+      return { success: false, error: 'Intervention non trouvée' }
+    }
+
     const updated = await prisma.intervention.update({
       where: { id: interventionId },
       data: {
@@ -149,8 +156,6 @@ export async function assignerIntervention(
         statut: StatutIntervention.EN_ATTENTE
       }
     })
-
-    revalidatePath('/dashboard')
 
     return {
       success: true,
@@ -166,7 +171,12 @@ export async function assignerIntervention(
   }
 }
 
-export async function getInterventions(hotelId: number, userId: number, userRole: string) {
+export async function getInterventions(
+  hotelId: number,
+  userId: number,
+  userRole: string,
+  includeStats: boolean = false
+) {
   try {
     const whereClause: Record<string, unknown> = { hotelId }
 
@@ -196,6 +206,13 @@ export async function getInterventions(hotelId: number, userId: number, userRole
         dateCreation: 'desc'
       }
     })
+
+    // Si les stats sont demandées, les ajouter à la réponse
+    if (includeStats) {
+      const { getGlobalStats } = await import('@/app/actions/stats')
+      const stats = await getGlobalStats(hotelId)
+      // Ajouter les stats au contexte de retour (pattern à définir)
+    }
 
     return interventions
   } catch (error) {

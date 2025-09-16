@@ -24,7 +24,6 @@ interface TechnicianComboboxProps {
   value?: number | null
   onValueChange: (technicianId: number | null) => void
   disabled?: boolean
-  isLoading?: boolean
   className?: string
 }
 
@@ -69,7 +68,6 @@ export function TechnicianCombobox({
   value,
   onValueChange,
   disabled = false,
-  isLoading = false,
   className
 }: TechnicianComboboxProps) {
   const [open, setOpen] = React.useState(false)
@@ -89,7 +87,7 @@ export function TechnicianCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          disabled={disabled || isLoading}
+          disabled={disabled}
           className={cn(
             "h-8 px-2 py-1 text-xs min-w-[160px] justify-between",
             "hover:bg-gray-50 transition-colors",
@@ -97,9 +95,7 @@ export function TechnicianCombobox({
           )}
         >
           <div className="flex items-center gap-2">
-            {isLoading ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : selectedTechnician ? (
+            {selectedTechnician ? (
               <>
                 <TechnicianAvatar technician={selectedTechnician} />
                 <div className="flex flex-col items-start min-w-0">

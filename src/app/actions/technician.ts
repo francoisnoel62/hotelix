@@ -1,9 +1,9 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { TechnicianWithDetails, TechnicianListItem, TechnicianStats } from '@/lib/types/technician'
 import { StatutIntervention } from '@prisma/client'
+import { getInterventionCounts, getTechnicianStatus, getTechnicianStatsAction } from '@/app/actions/stats'
 
 interface ActionResult<T = unknown> {
   success: boolean
@@ -33,33 +33,31 @@ export async function getTechnicians(hotelId: number): Promise<TechnicianListIte
       }
     })
 
-    return techniciens.map(technicien => {
-      const interventionsEnCours = technicien.interventionsAssignees.filter(
-        i => i.statut === StatutIntervention.EN_COURS
-      ).length
-      const interventionsTotal = technicien.interventionsAssignees.length
-      const dernierActivite = technicien.interventionsAssignees.length > 0
-        ? technicien.interventionsAssignees[0].dateCreation
-        : null
+    // Utiliser Promise.all pour calculer les statuts en parallèle
+    const techniciensWithStats = await Promise.all(
+      techniciens.map(async (technicien) => {
+        const counts = await getInterventionCounts({
+          hotelId,
+          technicienId: technicien.id
+        })
 
-      // Déterminer le statut basé sur les interventions en cours
-      let statut: 'DISPONIBLE' | 'OCCUPE' | 'HORS_LIGNE' = 'DISPONIBLE'
-      if (interventionsEnCours > 0) {
-        statut = interventionsEnCours >= 3 ? 'OCCUPE' : 'DISPONIBLE'
-      }
+        const statut = await getTechnicianStatus(technicien.id)
 
-      return {
-        id: technicien.id,
-        email: technicien.email,
-        name: technicien.name,
-        specialite: technicien.specialite,
-        interventionsEnCours,
-        interventionsTotal,
-        dernierActivite,
-        statut,
-        noteMoyenne: 4.2 // Placeholder - à implémenter avec un système de notes
-      }
-    })
+        return {
+          id: technicien.id,
+          email: technicien.email,
+          name: technicien.name,
+          specialite: technicien.specialite,
+          interventionsEnCours: counts.enCours,
+          interventionsTotal: counts.total,
+          dernierActivite: technicien.interventionsAssignees[0]?.dateCreation || null,
+          statut,
+          noteMoyenne: 4.2 // Placeholder
+        }
+      })
+    )
+
+    return techniciensWithStats
   } catch (error) {
     console.error('Erreur récupération techniciens:', error)
     return []
@@ -124,95 +122,7 @@ export async function getTechnicianStats(
   periodDays: number = 30
 ): Promise<TechnicianStats | null> {
   try {
-    const dateDebut = new Date()
-    dateDebut.setDate(dateDebut.getDate() - periodDays)
-
-    // Récupérer toutes les interventions de la période
-    const interventions = await prisma.intervention.findMany({
-      where: {
-        assigneId: technicienId,
-        dateCreation: {
-          gte: dateDebut
-        }
-      },
-      select: {
-        type: true,
-        statut: true,
-        dateCreation: true,
-        dateDebut: true,
-        dateFin: true
-      }
-    })
-
-    // Calculer les interventions par jour (10 derniers jours)
-    const interventionsParJour = []
-    for (let i = 9; i >= 0; i--) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      const dateStr = date.toISOString().split('T')[0]
-
-      const count = interventions.filter(intervention => {
-        const interventionDate = new Date(intervention.dateCreation).toISOString().split('T')[0]
-        return interventionDate === dateStr
-      }).length
-
-      interventionsParJour.push({
-        date: dateStr,
-        count
-      })
-    }
-
-    // Calculer le temps moyen par intervention (pour les terminées)
-    const interventionsTerminees = interventions.filter(
-      i => i.statut === StatutIntervention.TERMINEE && i.dateDebut && i.dateFin
-    )
-
-    let tempsMoyenIntervention = 0
-    if (interventionsTerminees.length > 0) {
-      const tempsTotal = interventionsTerminees.reduce((total, intervention) => {
-        const debut = new Date(intervention.dateDebut!)
-        const fin = new Date(intervention.dateFin!)
-        return total + (fin.getTime() - debut.getTime())
-      }, 0)
-      tempsMoyenIntervention = Math.round(tempsTotal / interventionsTerminees.length / (1000 * 60)) // en minutes
-    }
-
-    // Calculer le taux de réussite
-    const totalInterventions = interventions.length
-    const interventionsReussies = interventions.filter(
-      i => i.statut === StatutIntervention.TERMINEE
-    ).length
-    const tauxReussite = totalInterventions > 0
-      ? Math.round((interventionsReussies / totalInterventions) * 100)
-      : 0
-
-    // Répartition par type
-    const typeCount: { [key: string]: number } = {}
-    interventions.forEach(intervention => {
-      typeCount[intervention.type] = (typeCount[intervention.type] || 0) + 1
-    })
-
-    const repartitionParType = Object.entries(typeCount).map(([type, count]) => ({
-      type,
-      count,
-      percentage: Math.round((count / totalInterventions) * 100)
-    }))
-
-    // Totaux mensuel
-    const totauxMensuel = {
-      enCours: interventions.filter(i => i.statut === StatutIntervention.EN_COURS).length,
-      terminees: interventions.filter(i => i.statut === StatutIntervention.TERMINEE).length,
-      annulees: interventions.filter(i => i.statut === StatutIntervention.ANNULEE).length,
-      enAttente: interventions.filter(i => i.statut === StatutIntervention.EN_ATTENTE).length
-    }
-
-    return {
-      interventionsParJour,
-      tempsMoyenIntervention,
-      tauxReussite,
-      repartitionParType,
-      totauxMensuel
-    }
+    return await getTechnicianStatsAction(technicienId, periodDays)
   } catch (error) {
     console.error('Erreur récupération statistiques technicien:', error)
     return null
@@ -224,8 +134,10 @@ export async function getAvailableInterventions(hotelId: number) {
     const interventions = await prisma.intervention.findMany({
       where: {
         hotelId,
-        statut: StatutIntervention.EN_ATTENTE,
-        assigneId: null
+        OR: [
+          { statut: StatutIntervention.EN_ATTENTE, assigneId: null },
+          { statut: StatutIntervention.EN_COURS, assigneId: null }
+        ]
       },
       include: {
         zone: {
@@ -298,9 +210,6 @@ export async function assignInterventionToTechnician(
         statut: StatutIntervention.EN_ATTENTE
       }
     })
-
-    revalidatePath('/dashboard/techniciens')
-    revalidatePath('/dashboard')
 
     return {
       success: true,

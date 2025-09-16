@@ -51,7 +51,7 @@ export default function TechnicianDetailPage() {
 
           // Charger les interventions disponibles
           const interventionsData = await getAvailableInterventions(parsedUser.hotelId)
-          setAvailableInterventions(interventionsData as any)
+          setAvailableInterventions(interventionsData as InterventionWithRelations[])
         } else {
           toast({
             variant: 'error',
@@ -94,6 +94,34 @@ export default function TechnicianDetailPage() {
     }
   }
 
+  const handleOptimisticUpdate = (interventionId: number, updates: Partial<InterventionWithRelations>) => {
+    setTechnician(prev => {
+      if (!prev) return prev
+
+      // Si l'assigneId change et n'est plus le technicien courant, supprimer l'intervention de sa liste
+      if (updates.assigneId !== undefined && updates.assigneId !== technicianId) {
+        return {
+          ...prev,
+          interventionsAssignees: prev.interventionsAssignees.filter(intervention =>
+            intervention.id !== interventionId
+          ),
+          _count: {
+            ...prev._count,
+            interventionsAssignees: prev._count.interventionsAssignees - 1
+          }
+        }
+      }
+
+      // Sinon, mettre à jour l'intervention normalement
+      return {
+        ...prev,
+        interventionsAssignees: prev.interventionsAssignees.map(intervention =>
+          intervention.id === interventionId ? { ...intervention, ...updates } : intervention
+        )
+      }
+    })
+  }
+
   const handleAssignIntervention = async (interventionId: number) => {
     if (!user) return
 
@@ -107,7 +135,7 @@ export default function TechnicianDetailPage() {
       await refreshTechnician()
       // Recharger les interventions disponibles
       const interventionsData = await getAvailableInterventions(user.hotelId)
-      setAvailableInterventions(interventionsData as any)
+      setAvailableInterventions(interventionsData as InterventionWithRelations[])
     } else {
       toast({
         variant: 'error',
@@ -141,6 +169,7 @@ export default function TechnicianDetailPage() {
     return 'Surchargé'
   }
 
+  const interventionsEnAttente = technician.interventionsAssignees.filter(i => i.statut === 'EN_ATTENTE')
   const interventionsEnCours = technician.interventionsAssignees.filter(i => i.statut === 'EN_COURS')
   const interventionsPassees = technician.interventionsAssignees.filter(i => i.statut === 'TERMINEE' || i.statut === 'ANNULEE')
 
@@ -184,6 +213,10 @@ export default function TechnicianDetailPage() {
 
           {/* Quick stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-900">{interventionsEnAttente.length}</div>
+              <div className="text-sm text-gray-500">En attente</div>
+            </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900">{interventionsEnCours.length}</div>
               <div className="text-sm text-gray-500">En cours</div>
@@ -251,6 +284,23 @@ export default function TechnicianDetailPage() {
           <div className="p-6">
             {activeTab === 'interventions' && (
               <div className="space-y-6">
+                {interventionsEnAttente.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">
+                      Interventions en attente
+                      <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        À démarrer
+                      </span>
+                    </h3>
+                    <InterventionsList
+                      interventions={interventionsEnAttente}
+                      user={user}
+                      onRefresh={refreshTechnician}
+                      onOptimisticUpdate={handleOptimisticUpdate}
+                    />
+                  </div>
+                )}
+
                 {interventionsEnCours.length > 0 && (
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-4">Interventions en cours</h3>
@@ -258,6 +308,7 @@ export default function TechnicianDetailPage() {
                       interventions={interventionsEnCours}
                       user={user}
                       onRefresh={refreshTechnician}
+                      onOptimisticUpdate={handleOptimisticUpdate}
                     />
                   </div>
                 )}
@@ -269,6 +320,7 @@ export default function TechnicianDetailPage() {
                       interventions={interventionsPassees}
                       user={user}
                       onRefresh={refreshTechnician}
+                      onOptimisticUpdate={handleOptimisticUpdate}
                     />
                   </div>
                 )}

@@ -4,38 +4,39 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout'
 import { UserSession } from '@/lib/types/auth'
-import { InterventionWithRelations } from '@/lib/types/intervention'
 import { logoutAction } from '@/app/actions/auth'
-import { getInterventions } from '@/app/actions/intervention'
 import { InterventionsList } from '@/components/interventions/interventions-list'
+import { useInterventionData } from '@/hooks/useInterventionData'
+import { GlobalStats } from '@/lib/services/stats'
 
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<UserSession | null>(null)
-  const [interventions, setInterventions] = useState<InterventionWithRelations[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [showInterventionForm, setShowInterventionForm] = useState(false)
 
+  // Utiliser le hook unifié avec synchronisation optimiste
+  const {
+    interventions,
+    stats,
+    isLoading,
+    error,
+    refresh,
+    updateOptimistic
+  } = useInterventionData(
+    user?.hotelId || 0,
+    user?.id || 0,
+    user?.role || '',
+    true // Inclure les stats
+  )
+
   useEffect(() => {
-    const loadData = async () => {
-      const userData = localStorage.getItem('user')
-      if (userData) {
-        const parsedUser = JSON.parse(userData)
-        setUser(parsedUser)
-
-        const interventionsData = await getInterventions(
-          parsedUser.hotelId,
-          parsedUser.id,
-          parsedUser.role
-        )
-        setInterventions(interventionsData)
-      } else {
-        router.push('/auth')
-      }
-      setIsLoading(false)
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser)
+    } else {
+      router.push('/auth')
     }
-
-    loadData()
   }, [router])
 
   const handleLogout = async () => {
@@ -52,16 +53,6 @@ export default function DashboardPage() {
     setUser(updatedUser)
   }
 
-  const refreshInterventions = async () => {
-    if (user) {
-      const interventionsData = await getInterventions(
-        user.hotelId,
-        user.id,
-        user.role
-      )
-      setInterventions(interventionsData)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -84,18 +75,26 @@ export default function DashboardPage() {
     }
   }
 
-  const getStatsForRole = (role: string, interventions: InterventionWithRelations[]) => {
-    const enCours = interventions.filter(i => i.statut === 'EN_COURS').length
-    const enAttente = interventions.filter(i => i.statut === 'EN_ATTENTE').length
-    const terminees = interventions.filter(i => i.statut === 'TERMINEE').length
+  // Éliminer getStatsForRole - utiliser directement les stats du service
+  const getStatsForRole = (role: string, stats: GlobalStats | null) => {
+    if (!stats) {
+      return {
+        title: 'Chargement...',
+        stats: [
+          { label: 'En cours', value: 0, color: 'blue' },
+          { label: 'En attente', value: 0, color: 'orange' },
+          { label: 'Terminées', value: 0, color: 'green' }
+        ]
+      }
+    }
 
     if (role === 'TECHNICIEN') {
       return {
         title: 'Mes interventions',
         stats: [
-          { label: 'En cours', value: enCours, color: 'blue' },
-          { label: 'En attente', value: enAttente, color: 'orange' },
-          { label: 'Terminées', value: terminees, color: 'green' }
+          { label: 'En cours', value: stats.enCours, color: 'blue' },
+          { label: 'En attente', value: stats.enAttente, color: 'orange' },
+          { label: 'Terminées', value: stats.terminees, color: 'green' }
         ]
       }
     }
@@ -103,14 +102,14 @@ export default function DashboardPage() {
     return {
       title: 'Interventions',
       stats: [
-        { label: 'En cours', value: enCours, color: 'blue' },
-        { label: 'En attente', value: enAttente, color: 'orange' },
-        { label: 'Total', value: interventions.length, color: 'purple' }
+        { label: 'En cours', value: stats.enCours, color: 'blue' },
+        { label: 'En attente', value: stats.enAttente, color: 'orange' },
+        { label: 'Total', value: stats.totalInterventions, color: 'purple' }
       ]
     }
   }
 
-  const stats = getStatsForRole(user.role, interventions)
+  const displayStats = getStatsForRole(user?.role || '', stats)
 
   return (
     <DashboardLayout user={user} onLogout={handleLogout} onProfileUpdate={handleProfileUpdate}>
@@ -143,9 +142,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Quick Stats - utiliser les stats du service */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.stats.map((stat, index) => (
+          {displayStats.stats.map((stat, index) => (
             <div key={index} className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className={`p-2 bg-${stat.color}-100 rounded-lg`}>
@@ -162,11 +161,12 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        {/* Interventions List */}
+        {/* Liste des interventions - avec synchronisation optimiste */}
         <InterventionsList
           interventions={interventions}
           user={user}
-          onRefresh={refreshInterventions}
+          onRefresh={refresh}
+          onOptimisticUpdate={updateOptimistic}
           showForm={showInterventionForm}
           onShowFormChange={setShowInterventionForm}
         />

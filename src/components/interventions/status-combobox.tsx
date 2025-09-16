@@ -29,7 +29,6 @@ interface StatusComboboxProps {
   onValueChange: (status: StatutIntervention) => void
   disabled?: boolean
   canCancel?: boolean
-  isLoading?: boolean
   className?: string
   readOnly?: boolean
 }
@@ -66,7 +65,6 @@ export function StatusCombobox({
   onValueChange,
   disabled = false,
   canCancel = false,
-  isLoading = false,
   className,
   readOnly = false
 }: StatusComboboxProps) {
@@ -104,7 +102,7 @@ export function StatusCombobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          disabled={disabled || isLoading}
+          disabled={disabled}
           className={cn(
             "h-8 px-2 py-1 text-xs font-medium rounded-full border-0",
             currentStatus?.color,
@@ -114,11 +112,7 @@ export function StatusCombobox({
           )}
         >
           <div className="flex items-center gap-1">
-            {isLoading ? (
-              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            ) : (
-              currentStatus?.icon
-            )}
+            {currentStatus?.icon}
             {currentStatus?.label}
           </div>
           <ChevronsUpDown className="h-3 w-3 opacity-50" />

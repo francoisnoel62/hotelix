@@ -16,6 +16,7 @@ interface InterventionsListProps {
   interventions: InterventionWithRelations[]
   user: UserSession
   onRefresh: () => void
+  onOptimisticUpdate: (interventionId: number, updates: Partial<InterventionWithRelations>) => void
   showForm?: boolean
   onShowFormChange?: (show: boolean) => void
 }
@@ -24,6 +25,7 @@ export function InterventionsList({
   interventions,
   user,
   onRefresh,
+  onOptimisticUpdate,
   showForm = false,
   onShowFormChange
 }: InterventionsListProps) {
@@ -31,7 +33,6 @@ export function InterventionsList({
   const [statutFilter, setStatutFilter] = useState<StatutIntervention | 'ALL'>('ALL')
   const [editingIntervention, setEditingIntervention] = useState<InterventionWithRelations | null>(null)
   const [techniciens, setTechniciens] = useState<TechnicienOption[]>([])
-  const [loadingActions, setLoadingActions] = useState<{ [key: number]: 'status' | 'technician' | null }>({})
   const { toast } = useToast()
 
   useEffect(() => {
@@ -52,7 +53,9 @@ export function InterventionsList({
   })
 
   const handleStatutChange = async (interventionId: number, nouveauStatut: StatutIntervention) => {
-    setLoadingActions(prev => ({ ...prev, [interventionId]: 'status' }))
+    // Mise à jour optimiste immédiate
+    onOptimisticUpdate(interventionId, { statut: nouveauStatut })
+
     try {
       const result = await updateInterventionStatut(interventionId, nouveauStatut, user.id)
       if (result.success) {
@@ -61,21 +64,39 @@ export function InterventionsList({
           title: 'Statut mis à jour',
           description: result.message || `Statut changé vers ${nouveauStatut.replace('_', ' ').toLowerCase()}`
         })
-        onRefresh()
       } else {
+        // En cas d'erreur, recharger les données pour revenir à l'état correct
+        onRefresh()
         toast({
           variant: 'error',
           title: 'Erreur',
           description: result.error || 'Erreur lors de la mise à jour'
         })
       }
-    } finally {
-      setLoadingActions(prev => ({ ...prev, [interventionId]: null }))
+    } catch {
+      // En cas d'erreur, recharger les données pour revenir à l'état correct
+      onRefresh()
+      toast({
+        variant: 'error',
+        title: 'Erreur',
+        description: 'Erreur lors de la mise à jour'
+      })
     }
   }
 
   const handleTechnicienChange = async (interventionId: number, technicienId: number | null) => {
-    setLoadingActions(prev => ({ ...prev, [interventionId]: 'technician' }))
+    // Mise à jour optimiste immédiate
+    const technicien = technicienId ? techniciens.find(t => t.id === technicienId) : null
+    onOptimisticUpdate(interventionId, {
+      assigneId: technicienId,
+      assigne: technicien ? {
+        id: technicien.id,
+        name: technicien.name,
+        email: technicien.email,
+        specialite: technicien.specialite
+      } : null
+    })
+
     try {
       const result = await assignerIntervention(interventionId, technicienId || 0, user.id)
       if (result.success) {
@@ -84,16 +105,23 @@ export function InterventionsList({
           title: 'Assignation mise à jour',
           description: result.message || (technicienId ? 'Technicien assigné' : 'Intervention désassignée')
         })
-        onRefresh()
       } else {
+        // En cas d'erreur, recharger les données pour revenir à l'état correct
+        onRefresh()
         toast({
           variant: 'error',
           title: 'Erreur',
           description: result.error || 'Erreur lors de l\'assignation'
         })
       }
-    } finally {
-      setLoadingActions(prev => ({ ...prev, [interventionId]: null }))
+    } catch {
+      // En cas d'erreur, recharger les données pour revenir à l'état correct
+      onRefresh()
+      toast({
+        variant: 'error',
+        title: 'Erreur',
+        description: 'Erreur lors de l\'assignation'
+      })
     }
   }
 
@@ -278,7 +306,6 @@ export function InterventionsList({
                         technicians={techniciens}
                         value={intervention.assigneId}
                         onValueChange={(technicianId) => handleTechnicienChange(intervention.id, technicianId)}
-                        isLoading={loadingActions[intervention.id] === 'technician'}
                         className="min-w-[140px] sm:min-w-[160px] lg:min-w-[180px]"
                       />
                     )}
@@ -289,7 +316,6 @@ export function InterventionsList({
                         value={intervention.statut}
                         onValueChange={(status) => handleStatutChange(intervention.id, status)}
                         canCancel={user.role === 'MANAGER'}
-                        isLoading={loadingActions[intervention.id] === 'status'}
                       />
                     )}
                   </div>
