@@ -21,6 +21,137 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Edit } from "lucide-react";
 import { StatusCombobox } from "./status-combobox";
 import { TechnicianCombobox } from "./technician-combobox";
 
+// Composant pour les actions en lot
+interface BulkActionsBarProps {
+  selectedCount: number;
+  onClearSelection: () => void;
+  onBulkStatusChange: (ids: number[], status: StatutIntervention) => Promise<void>;
+  onBulkAssign: (ids: number[], technicianId: number | null) => Promise<void>;
+  onBulkDelete: (ids: number[]) => Promise<void>;
+  user: UserSession;
+  techniciens: TechnicienOption[];
+  selectedIds: number[];
+  onCompleted: () => void;
+}
+
+function BulkActionsBar({
+  selectedCount,
+  onClearSelection,
+  onBulkStatusChange,
+  onBulkAssign,
+  onBulkDelete,
+  user,
+  techniciens,
+  selectedIds,
+  onCompleted
+}: BulkActionsBarProps) {
+  const handleStatusChange = async (status: StatutIntervention) => {
+    await onBulkStatusChange(selectedIds, status);
+    onCompleted();
+  };
+
+  const handleAssignChange = async (technicianId: number | null) => {
+    await onBulkAssign(selectedIds, technicianId);
+    onCompleted();
+  };
+
+  const handleDelete = async () => {
+    if (confirm(`Supprimer ${selectedCount} intervention${selectedCount > 1 ? 's' : ''} ?`)) {
+      await onBulkDelete(selectedIds);
+      onCompleted();
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 shadow-sm">
+      {/* Badge de sélection */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white rounded-full text-xs font-bold">
+          {selectedCount}
+        </div>
+        <span className="text-sm font-medium text-blue-900">
+          intervention{selectedCount > 1 ? 's' : ''} sélectionnée{selectedCount > 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Séparateur */}
+      <div className="h-6 w-px bg-blue-300"></div>
+
+      {/* Bouton désélectionner */}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={onClearSelection}
+        className="text-gray-600 hover:text-gray-800 border-gray-300 hover:border-gray-400"
+      >
+        Tout désélectionner
+      </Button>
+
+      {user.role === 'MANAGER' && (
+        <>
+          {/* Actions rapides avec design cohérent */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Actions:</span>
+
+            {/* Changement de statut avec design amélioré */}
+            <select
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleStatusChange(e.target.value as StatutIntervention);
+                  e.target.value = ''; // Reset selection
+                }
+              }}
+              defaultValue=""
+            >
+              <option value="">Changer le statut</option>
+              <option value="EN_ATTENTE">→ En attente</option>
+              <option value="EN_COURS">→ En cours</option>
+              <option value="TERMINEE">→ Terminée</option>
+              <option value="ANNULEE">→ Annulée</option>
+            </select>
+
+            {/* Assignation avec design amélioré */}
+            <select
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white hover:border-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-w-[140px] transition-colors"
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value !== '') {
+                  const technicianId = value === 'null' ? null : parseInt(value);
+                  handleAssignChange(technicianId);
+                  e.target.value = ''; // Reset selection
+                }
+              }}
+              defaultValue=""
+            >
+              <option value="">Assigner à</option>
+              <option value="null">→ Désassigner</option>
+              {techniciens.map((tech) => (
+                <option key={tech.id} value={tech.id}>
+                  → {tech.name || tech.email}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Séparateur */}
+          <div className="h-6 w-px bg-gray-300"></div>
+
+          {/* Action de suppression */}
+          <Button
+            size="sm"
+            variant="destructive"
+            onClick={handleDelete}
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            Supprimer
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 type SortField =
   | "titre"
   | "statut"
@@ -196,53 +327,17 @@ export function InterventionsTableView({
     <div className="space-y-4">
       {/* Actions en lot */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <span className="text-sm font-medium text-blue-900">
-            {selectedIds.size} intervention{selectedIds.size > 1 ? 's' : ''} sélectionnée{selectedIds.size > 1 ? 's' : ''}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setSelectedIds(new Set())}
-          >
-            Désélectionner
-          </Button>
-          {user.role === 'MANAGER' && (
-            <>
-              <Button
-                size="sm"
-                onClick={() => {
-                  // TODO: Implémenter l'assignation en lot
-                  console.log('Assignation en lot:', Array.from(selectedIds));
-                }}
-              >
-                Assigner
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  // TODO: Implémenter le changement de statut en lot
-                  console.log('Changement statut en lot:', Array.from(selectedIds));
-                }}
-              >
-                Changer statut
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => {
-                  if (confirm(`Supprimer ${selectedIds.size} intervention${selectedIds.size > 1 ? 's' : ''} ?`)) {
-                    onBulkActions.delete(Array.from(selectedIds));
-                    setSelectedIds(new Set());
-                  }
-                }}
-              >
-                Supprimer
-              </Button>
-            </>
-          )}
-        </div>
+        <BulkActionsBar
+          selectedCount={selectedIds.size}
+          onClearSelection={() => setSelectedIds(new Set())}
+          onBulkStatusChange={onBulkActions.updateStatut}
+          onBulkAssign={onBulkActions.assignTechnician}
+          onBulkDelete={onBulkActions.delete}
+          user={user}
+          techniciens={techniciens}
+          selectedIds={Array.from(selectedIds)}
+          onCompleted={() => setSelectedIds(new Set())}
+        />
       )}
 
       <Table>
