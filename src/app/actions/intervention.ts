@@ -328,3 +328,184 @@ export async function getTechniciens(hotelId: number) {
     return []
   }
 }
+
+// Actions en lot
+export async function updateMultipleInterventionStatut(
+  interventionIds: number[],
+  nouveauStatut: StatutIntervention,
+  userId: number
+): Promise<ActionResult> {
+  try {
+    // Vérifier l'utilisateur
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return { success: false, error: 'Utilisateur non trouvé' }
+    }
+
+    // Vérifier les permissions sur chaque intervention
+    const interventions = await prisma.intervention.findMany({
+      where: {
+        id: { in: interventionIds },
+        hotelId: user.hotelId // Sécurité: s'assurer que toutes les interventions appartiennent à l'hôtel de l'utilisateur
+      },
+      include: { assigne: true }
+    })
+
+    if (interventions.length !== interventionIds.length) {
+      return { success: false, error: 'Certaines interventions n\'ont pas été trouvées' }
+    }
+
+    // Vérifier les permissions pour chaque intervention
+    const canModifyAll = interventions.every(intervention => {
+      return user.role === 'MANAGER' ||
+             (user.role === 'TECHNICIEN' && intervention.assigneId === userId)
+    })
+
+    if (!canModifyAll) {
+      return { success: false, error: 'Permission insuffisante pour modifier certaines interventions' }
+    }
+
+    // Effectuer la mise à jour
+    const updateData: {
+      statut: StatutIntervention;
+      dateModification: Date;
+      dateDebut?: Date;
+      dateFin?: Date | null;
+    } = {
+      statut: nouveauStatut,
+      dateModification: new Date(),
+    }
+
+    // Gérer les dates selon le statut
+    if (nouveauStatut === StatutIntervention.EN_COURS) {
+      updateData.dateDebut = new Date()
+    } else if (nouveauStatut === StatutIntervention.TERMINEE) {
+      updateData.dateFin = new Date()
+    }
+
+    await prisma.intervention.updateMany({
+      where: {
+        id: { in: interventionIds }
+      },
+      data: updateData
+    })
+
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+      message: `${interventionIds.length} intervention${interventionIds.length > 1 ? 's' : ''} mise${interventionIds.length > 1 ? 's' : ''} à jour`
+    }
+  } catch (error) {
+    console.error('Erreur mise à jour multiple statut:', error)
+    return {
+      success: false,
+      error: 'Erreur lors de la mise à jour en lot'
+    }
+  }
+}
+
+export async function assignMultipleInterventions(
+  interventionIds: number[],
+  technicienId: number | null,
+  managerId: number
+): Promise<ActionResult> {
+  try {
+    // Vérifier que l'utilisateur est manager
+    const manager = await prisma.user.findUnique({ where: { id: managerId } })
+    if (!manager || manager.role !== 'MANAGER') {
+      return { success: false, error: 'Seul un manager peut assigner des interventions' }
+    }
+
+    // Vérifier que toutes les interventions appartiennent à l'hôtel du manager
+    const interventions = await prisma.intervention.findMany({
+      where: {
+        id: { in: interventionIds },
+        hotelId: manager.hotelId
+      }
+    })
+
+    if (interventions.length !== interventionIds.length) {
+      return { success: false, error: 'Certaines interventions n\'ont pas été trouvées' }
+    }
+
+    // Si technicienId est fourni, vérifier qu'il existe et est bien technicien
+    if (technicienId) {
+      const technicien = await prisma.user.findUnique({ where: { id: technicienId } })
+      if (!technicien || technicien.role !== 'TECHNICIEN' || technicien.hotelId !== manager.hotelId) {
+        return { success: false, error: 'Technicien non trouvé ou invalide' }
+      }
+    }
+
+    // Effectuer l'assignation
+    await prisma.intervention.updateMany({
+      where: {
+        id: { in: interventionIds }
+      },
+      data: {
+        assigneId: technicienId,
+        statut: technicienId ? StatutIntervention.EN_ATTENTE : StatutIntervention.EN_ATTENTE,
+        dateModification: new Date()
+      }
+    })
+
+    revalidatePath('/dashboard')
+
+    const action = technicienId ? 'assignées' : 'désassignées'
+    return {
+      success: true,
+      message: `${interventionIds.length} intervention${interventionIds.length > 1 ? 's' : ''} ${action}`
+    }
+  } catch (error) {
+    console.error('Erreur assignation multiple:', error)
+    return {
+      success: false,
+      error: 'Erreur lors de l\'assignation en lot'
+    }
+  }
+}
+
+export async function deleteMultipleInterventions(
+  interventionIds: number[],
+  userId: number
+): Promise<ActionResult> {
+  try {
+    // Vérifier que l'utilisateur est manager
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user || user.role !== 'MANAGER') {
+      return { success: false, error: 'Seul un manager peut supprimer des interventions' }
+    }
+
+    // Vérifier que toutes les interventions appartiennent à l'hôtel du manager
+    const interventions = await prisma.intervention.findMany({
+      where: {
+        id: { in: interventionIds },
+        hotelId: user.hotelId
+      }
+    })
+
+    if (interventions.length !== interventionIds.length) {
+      return { success: false, error: 'Certaines interventions n\'ont pas été trouvées' }
+    }
+
+    // Supprimer les interventions
+    await prisma.intervention.deleteMany({
+      where: {
+        id: { in: interventionIds }
+      }
+    })
+
+    revalidatePath('/dashboard')
+
+    return {
+      success: true,
+      message: `${interventionIds.length} intervention${interventionIds.length > 1 ? 's' : ''} supprimée${interventionIds.length > 1 ? 's' : ''}`
+    }
+  } catch (error) {
+    console.error('Erreur suppression multiple:', error)
+    return {
+      success: false,
+      error: 'Erreur lors de la suppression en lot'
+    }
+  }
+}
