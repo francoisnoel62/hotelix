@@ -37,6 +37,12 @@ Le système propose une interface intuitive pour la création, l'assignation et 
 - Statistiques et rapports de performance
 - Interface adaptative selon le rôle utilisateur
 
+### ⚡ Interface Ultra-Réactive
+- **Mises à jour optimistes** : Feedback instantané sur toutes les actions
+- **Pas d'états de chargement** : Interface fluide sans attente
+- **Récupération d'erreur** : Revert automatique en cas de problème
+- **Synchronisation temps réel** : Données cohérentes entre les pages
+
 ## 🛠 Technologies & Stack
 
 - **Framework** : Next.js 15 avec App Router et Turbopack
@@ -47,7 +53,7 @@ Le système propose une interface intuitive pour la création, l'assignation et 
 - **Icônes** : Lucide React
 - **Authentification** : Server Actions avec bcryptjs
 - **Formulaires** : React Hook Form
-- **Tests** : Vitest avec React Testing Library
+- **Tests** : Vitest avec React Testing Library + tests optimistic updates
 - **Runtime** : Node.js
 
 ## 🧩 Architecture du Projet
