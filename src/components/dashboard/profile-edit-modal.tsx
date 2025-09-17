@@ -2,7 +2,7 @@
 
 import React, { useState, useActionState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { UserPen, X } from 'lucide-react'
+import { UserPen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,7 +41,7 @@ export function ProfileEditModal({ user, onProfileUpdate }: ProfileEditModalProp
   const {
     register,
     handleSubmit,
-    setValue,
+    // setValue,
     watch,
     reset,
     formState: { errors }
@@ -172,7 +172,7 @@ export function ProfileEditModal({ user, onProfileUpdate }: ProfileEditModalProp
               className="bg-gray-50 text-gray-500"
             />
             <p className="text-xs text-gray-500">
-              Pour changer d'email, contactez votre administrateur.
+              Pour changer d&apos;email, contactez votre administrateur.
             </p>
           </div>
 
@@ -198,7 +198,7 @@ export function ProfileEditModal({ user, onProfileUpdate }: ProfileEditModalProp
               className="bg-gray-50 text-gray-500"
             />
             <p className="text-xs text-gray-500">
-              Pour changer d'hôtel, contactez votre administrateur.
+              Pour changer d&apos;hôtel, contactez votre administrateur.
             </p>
           </div>
 

@@ -191,7 +191,9 @@ export class StatsService {
   static async getInterventionCounts(filters: StatsFilters): Promise<InterventionCounts> {
     const { hotelId, technicienId, periodDays, dateDebut, dateFin } = filters
 
-    const whereClause: Record<string, unknown> = { hotelId }
+    const whereClause: Record<string, unknown> & {
+      dateCreation?: { gte?: Date; lte?: Date }
+    } = { hotelId }
 
     if (technicienId) {
       whereClause.assigneId = technicienId

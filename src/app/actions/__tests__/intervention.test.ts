@@ -5,9 +5,9 @@ import {
   updateInterventionStatut,
   assignerIntervention,
   getInterventions,
-  updateIntervention
+  // updateIntervention
 } from '../intervention'
-import { StatutIntervention, TypeIntervention, PrioriteIntervention, OrigineIntervention, TypeZone } from '@prisma/client'
+import { StatutIntervention, TypeIntervention, PrioriteIntervention, OrigineIntervention } from '@prisma/client'
 
 describe('Intervention Server Actions', () => {
   beforeEach(async () => {

@@ -76,7 +76,7 @@ export function TechnicianStatsModule({ stats }: TechnicianStatsModuleProps) {
 
       {/* Répartition par type */}
       <div className="bg-white border rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Répartition par type d'intervention</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Répartition par type d&apos;intervention</h3>
         <div className="space-y-4">
           {stats.repartitionParType.map((type) => (
             <div key={type.type} className="flex items-center justify-between">

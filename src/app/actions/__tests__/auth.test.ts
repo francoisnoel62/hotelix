@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { registerAction, loginAction, getHotelsAction } from '../auth'
+import { registerAction, loginAction } from '../auth'
 import { testPrisma, resetDatabase, seedTestData } from '@/test/db-utils'
 import bcryptjs from 'bcryptjs'
 

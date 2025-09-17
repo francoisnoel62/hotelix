@@ -122,6 +122,58 @@ npm test src/__tests__/optimistic-updates.test.ts
    - Naviguer vers une autre page
    - **Vérifier** : Données cohérentes (via refresh manuel)
 
+## Patterns Vue Table et Actions en Lot
+
+### Architecture Vue Table
+
+La vue table utilise les mêmes patterns de mises à jour optimistes que la vue détaillée :
+
+```typescript
+// Hook de persistance de vue
+const [viewMode, setViewMode] = useViewMode()
+
+// Utilisation des mêmes données optimistes
+const { interventions, updateOptimistic, refresh } = useInterventionData(...)
+```
+
+### Actions en Lot avec Optimistic Updates
+
+Les actions en lot étendent le pattern optimiste aux modifications multiples :
+
+```typescript
+const handleBulkStatusChange = async (ids: number[], newStatus: StatutIntervention) => {
+  // 1. Mises à jour optimistes pour tous les IDs
+  ids.forEach(id => updateOptimistic(id, { statut: newStatus }))
+
+  // 2. Server action bulk
+  try {
+    await updateMultipleInterventionStatut(ids, newStatus, userId)
+    toast({ variant: 'success', title: `${ids.length} interventions mises à jour` })
+  } catch {
+    // 3. Récupération d'erreur globale
+    refresh()
+    toast({ variant: 'error', title: 'Erreur lors de la mise à jour en lot' })
+  }
+}
+```
+
+### Tests Spécifiques Actions en Lot
+
+Les tests de bulk actions valident :
+- **Modifications multiples** : Changement de statut de plusieurs interventions
+- **Assignation en lot** : Assignation/désassignation de techniciens
+- **Suppression multiple** : Suppression de plusieurs interventions
+- **Permissions** : Validation des droits pour actions bulk
+- **Récupération d'erreur** : Rollback correct en cas d'échec
+
+```bash
+# Tests spécifiques actions en lot
+npm test src/app/actions/__tests__/bulk-actions.test.ts
+
+# Tests complets avec optimistic updates
+npm test src/__tests__/optimistic-updates.test.ts
+```
+
 ## Dépannage
 
 ### Problèmes Courants

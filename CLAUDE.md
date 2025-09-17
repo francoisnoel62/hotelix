@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Testing Commands
 
-- `npm test` - Run all tests (includes optimistic updates tests)
+- `npm test` - Run all tests (50 tests: optimistic updates, bulk actions, etc.)
 - `npm run test:watch` - Run tests in watch mode for development
 - `npm run test:ui` - Open Vitest UI interface
 - `npm run test:coverage` - Generate test coverage report
@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Language**: TypeScript with strict mode
 - **Database**: PostgreSQL with Prisma ORM
 - **Styling**: Tailwind CSS v4 with shadcn/ui components
-- **UI Components**: Radix UI primitives with shadcn/ui (New York style)
+- **UI Components**: Radix UI primitives with shadcn/ui (New York style) + Table components
 - **Icons**: Lucide React
 - **Testing**: Vitest v2.1.9 with React Testing Library and Docker PostgreSQL
 - **Build Tool**: Turbopack
@@ -66,7 +66,15 @@ src/
 │   └── layout.tsx
 ├── components/
 │   ├── auth/            # Composants d'authentification
-│   └── ui/              # shadcn/ui components
+│   ├── interventions/   # Gestion interventions (vue détaillée + table)
+│   │   ├── view-switcher.tsx          # Switcher vue détaillée/table
+│   │   ├── interventions-table-view.tsx # Vue table avec tri et actions en lot
+│   │   └── table-components.tsx       # Composants auxiliaires table
+│   └── ui/              # shadcn/ui components (Table, Checkbox, etc.)
+├── hooks/
+│   ├── useInterventionData.ts         # Hook données avec mises à jour optimistes
+│   ├── useViewMode.ts                 # Hook persistance vue table/détaillée
+│   └── useTechnicianData.ts           # Hook données techniciens
 ├── lib/
 │   ├── types/           # Types TypeScript
 │   ├── validations/     # Validation schemas
@@ -102,6 +110,14 @@ src/
 - ✅ **Feedback instantané** sur changements de statut/assignation
 - ✅ **Récupération d'erreur** automatique avec rollback
 - ✅ **Pas d'états de chargement** pour les interactions utilisateur
+
+#### 6. **Vue Table avec Actions en Lot**
+- ✅ **Composants shadcn-ui** complets (Table, Checkbox)
+- ✅ **View Switcher** avec persistance localStorage
+- ✅ **Tri des colonnes** (titre, date, statut, priorité, zone, assigné)
+- ✅ **Sélection multiple** avec Set optimisé pour performance
+- ✅ **Actions en lot** (statut, assignation, suppression multiple)
+- ✅ **Mises à jour optimistes** étendues aux actions bulk
 
 ## UI Component System
 
@@ -162,6 +178,88 @@ const handleStatusChange = async (interventionId: number, newStatus: StatutInter
 - Tests dans `src/__tests__/optimistic-updates.test.ts`
 - Couvrent les changements de statut, assignations, gestion d'erreurs
 - Pattern : Action → Vérifier UI → Vérifier DB → Tester rollback
+
+## Patterns Vue Table et Actions en Lot
+
+### 🎯 Pattern View Switcher
+Utiliser le hook de persistance pour sauvegarder les préférences utilisateur :
+
+```typescript
+// Hook avec persistance localStorage
+const [viewMode, setViewMode] = useViewMode()
+
+// Rendu conditionnel
+{viewMode === 'detailed' ? (
+  <InterventionsListDetailed />
+) : (
+  <InterventionsTableView />
+)}
+```
+
+### 📊 Pattern Table avec Tri
+Implémenter le tri côté client avec optimisation performance :
+
+```typescript
+// Tri optimisé avec useMemo
+const sortedInterventions = useMemo(() => {
+  if (!sortConfig.field) return interventions
+
+  return [...interventions].sort((a, b) => {
+    // Logique de tri intelligent (dates, chaînes, null)
+    return sortConfig.direction === 'asc' ? comparison : -comparison
+  })
+}, [interventions, sortConfig])
+```
+
+### 🔄 Pattern Actions en Lot avec Optimistic Updates
+Étendre les mises à jour optimistes aux actions multiples :
+
+```typescript
+const handleBulkStatusChange = async (ids: number[], newStatus: StatutIntervention) => {
+  // 1. Mise à jour optimiste pour tous les IDs
+  ids.forEach(id => onOptimisticUpdate(id, { statut: newStatus }))
+
+  // 2. Server action bulk en arrière-plan
+  try {
+    await updateMultipleInterventionStatut(ids, newStatus, userId)
+    toast({ variant: 'success', title: `${ids.length} interventions mises à jour` })
+  } catch {
+    // 3. Récupération d'erreur globale
+    onRefresh()
+    toast({ variant: 'error', title: 'Erreur lors de la mise à jour en lot' })
+  }
+}
+```
+
+### ✅ Pattern Sélection Multiple
+Utiliser Set pour performance avec grandes listes :
+
+```typescript
+const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+
+// Sélection optimisée
+const handleSelectAll = (checked: boolean) => {
+  setSelectedIds(checked ? new Set(interventions.map(i => i.id)) : new Set())
+}
+
+const handleSelectOne = (id: number, checked: boolean) => {
+  setSelectedIds(prev => {
+    const newSet = new Set(prev)
+    if (checked) {
+      newSet.add(id)
+    } else {
+      newSet.delete(id)
+    }
+    return newSet
+  })
+}
+```
+
+### 🧪 Tests Actions en Lot
+- Tests dans `src/app/actions/__tests__/bulk-actions.test.ts`
+- Couvrent les modifications multiples de statut, assignations, suppressions
+- Validation des permissions pour actions bulk
+- Pattern : Setup → Bulk Action → Vérifier tous les changements → Tester rollback
 
 ## Évolution Architecturale
 

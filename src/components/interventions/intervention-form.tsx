@@ -69,7 +69,7 @@ export function InterventionForm({ user, onSuccess, onCancel }: InterventionForm
       } else {
         alert(result.error || 'Erreur lors de la création')
       }
-    } catch (error) {
+    } catch {
       alert('Erreur lors de la création de l\'intervention')
     } finally {
       setIsSubmitting(false)

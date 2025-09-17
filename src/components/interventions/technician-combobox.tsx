@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { User, UserX, ChevronsUpDown } from "lucide-react"
+import { UserX, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -137,7 +137,7 @@ export function TechnicianCombobox({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-medium text-gray-700">Non assigné</span>
-                    <span className="text-xs text-gray-500">Retirer l'assignation</span>
+                    <span className="text-xs text-gray-500">Retirer l&apos;assignation</span>
                   </div>
                   {value === null && (
                     <div className="ml-auto h-2 w-2 bg-blue-600 rounded-full" />

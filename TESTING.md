@@ -8,19 +8,24 @@ Ce document détaille l'infrastructure de tests mise en place pour Hotelix et ex
 - **Framework** : Vitest v2.1.9 (3-4x plus rapide que Jest)
 - **Environnement** : jsdom pour les composants React
 - **Base de données** : PostgreSQL isolée avec Docker
-- **Couverture** : 36 tests couvrant authentification, logique métier et BDD
+- **Couverture** : 50 tests couvrant authentification, logique métier, BDD et actions en lot
 - **Outils** : React Testing Library, bcryptjs mocking, Next.js mocking
 
 ### Statistiques de Tests
 ```
-✅ 36 tests passing
+✅ 50 tests passing
 ├── 17 tests d'authentification
-├── 11 tests de logique métier
-└── 8 tests de base de données
+├── 16 tests de logique métier (dont 5 actions en lot)
+├── 8 tests de base de données
+├── 8 tests mises à jour optimistes
+└── 1 test validation simple
 
-📁 5 fichiers de tests
+📁 8 fichiers de tests
 ├── src/app/actions/__tests__/auth.test.ts
 ├── src/app/actions/__tests__/intervention.test.ts
+├── src/app/actions/__tests__/bulk-actions.test.ts        # ✨ Nouveau
+├── src/app/actions/__tests__/bulk-actions-simple.test.ts # ✨ Nouveau
+├── src/__tests__/optimistic-updates.test.ts              # ✨ Nouveau
 ├── src/lib/validations/__tests__/auth.test.ts
 ├── src/lib/__tests__/prisma.test.ts
 └── src/test/__tests__/database-relationships.test.ts

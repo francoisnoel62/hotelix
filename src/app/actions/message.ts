@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { MessageWithDetails, ConversationItem, ChatMessage } from '@/lib/types/message'
+import { ConversationItem, ChatMessage } from '@/lib/types/message'
 
 interface ActionResult<T = unknown> {
   success: boolean

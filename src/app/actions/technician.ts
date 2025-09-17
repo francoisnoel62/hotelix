@@ -141,13 +141,16 @@ export async function getAvailableInterventions(hotelId: number) {
       },
       include: {
         zone: {
-          select: { nom: true }
+          select: { id: true, nom: true, type: true }
         },
         sousZone: {
-          select: { nom: true }
+          select: { id: true, nom: true }
         },
         demandeur: {
-          select: { name: true, email: true }
+          select: { id: true, name: true, email: true, role: true }
+        },
+        assigne: {
+          select: { id: true, name: true, email: true, specialite: true }
         }
       },
       orderBy: [

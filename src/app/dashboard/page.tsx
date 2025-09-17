@@ -19,7 +19,7 @@ export default function DashboardPage() {
     interventions,
     stats,
     isLoading,
-    error,
+    // error,
     refresh,
     updateOptimistic
   } = useInterventionData(

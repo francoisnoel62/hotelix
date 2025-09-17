@@ -17,10 +17,13 @@ Le système propose une interface intuitive pour la création, l'assignation et 
 
 ### 🛠️ Système d'Interventions
 - Création et modification d'interventions techniques
+- **Vue double** : Mode détaillé et mode table compact avec tri des colonnes
+- **Actions en lot** : Modification de statut, assignation et suppression multiple
 - Types variés : Plomberie, Électricité, Climatisation, Chauffage, etc.
 - Niveaux de priorité : Basse, Normale, Haute, Urgente
 - Statuts de suivi : En attente, En cours, Terminée, Annulée
 - Assignation automatique aux techniciens spécialisés
+- **Persistance des préférences** : Vue choisie sauvegardée en localStorage
 
 ### 🏨 Gestion des Zones
 - Organisation hiérarchique : Zones → Sous-zones
@@ -49,7 +52,7 @@ Le système propose une interface intuitive pour la création, l'assignation et 
 - **Langage** : TypeScript avec mode strict
 - **Base de données** : PostgreSQL avec Prisma ORM
 - **Styling** : Tailwind CSS v4 + shadcn/ui (style New York)
-- **UI Components** : Radix UI primitives
+- **UI Components** : Radix UI primitives avec composants Table complets
 - **Icônes** : Lucide React
 - **Authentification** : Server Actions avec bcryptjs
 - **Formulaires** : React Hook Form
@@ -70,8 +73,15 @@ hotelix/
 │   ├── components/            # Composants React
 │   │   ├── auth/             # Authentification et providers
 │   │   ├── dashboard/        # Interface de gestion
-│   │   ├── interventions/    # Gestion des interventions
-│   │   └── ui/               # shadcn/ui components
+│   │   ├── interventions/    # Gestion des interventions (vue détaillée + table)
+│   │   │   ├── view-switcher.tsx          # Switcher vue détaillée/table
+│   │   │   ├── interventions-table-view.tsx # Vue table avec tri et actions en lot
+│   │   │   └── table-components.tsx       # Composants auxiliaires table
+│   │   └── ui/               # shadcn/ui components (Table, Checkbox, etc.)
+│   ├── hooks/                # Hooks React personnalisés
+│   │   ├── useInterventionData.ts     # Hook données interventions avec optimistic updates
+│   │   ├── useViewMode.ts             # Hook persistance vue table/détaillée
+│   │   └── useTechnicianData.ts       # Hook données techniciens
 │   ├── lib/                  # Utilitaires et configurations
 │   │   ├── types/            # Types TypeScript
 │   │   ├── validations/      # Schémas de validation
@@ -267,11 +277,13 @@ git push origin feature/nouvelle-fonctionnalite
 ## ✅ Tests & Qualité
 
 ### Infrastructure de Tests
-Le projet dispose d'une **infrastructure de tests complète** avec **36 tests passing** :
+Le projet dispose d'une **infrastructure de tests complète** avec **50 tests passing** :
 
 - **Tests d'authentification** : 17 tests (Server Actions, validation, sécurité)
-- **Tests de logique métier** : 11 tests (interventions, permissions, assignations)
+- **Tests de logique métier** : 16 tests (interventions, permissions, assignations, actions en lot)
 - **Tests de base de données** : 8 tests (relations, contraintes, isolation)
+- **Tests d'interface** : 8 tests (mises à jour optimistes, vue table)
+- **Tests de validation** : 1 test (bulk actions simple)
 
 ### Lancer les Tests
 ```bash
@@ -433,11 +445,15 @@ interface ActionResult<T> {
 ## 📊 Roadmap & Évolutions Prévues
 
 ### Version 1.0 ✅ (Complété)
-- [x] Infrastructure de tests complète (36 tests)
+- [x] Infrastructure de tests complète (50 tests)
 - [x] Tests d'authentification et sécurité
 - [x] Tests de logique métier et permissions
 - [x] Tests de base de données et relations
 - [x] Docker pour isolation des tests
+- [x] **Vue table pour interventions** avec tri des colonnes
+- [x] **Actions en lot** (modification statut, assignation, suppression multiple)
+- [x] **Persistance des préférences** utilisateur (localStorage)
+- [x] **Composants Table shadcn-ui** complets
 
 ### Version 1.1 (En développement)
 - [ ] CI/CD avec GitHub Actions

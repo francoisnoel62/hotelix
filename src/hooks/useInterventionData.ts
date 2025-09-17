@@ -32,17 +32,14 @@ export function useInterventionData(
       setIsLoading(true)
       setError(null)
 
-      // Charger les interventions et stats en parallèle
-      const promises = [getInterventions(hotelId, userId, userRole)]
-      if (includeStats) {
-        promises.push(getGlobalStats(hotelId))
-      }
-
-      const [interventionsData, statsData] = await Promise.all(promises)
-
+      // Charger les interventions
+      const interventionsData = await getInterventions(hotelId, userId, userRole)
       setInterventions(interventionsData)
-      if (includeStats && statsData) {
-        setStats(statsData as GlobalStats)
+
+      // Charger les stats si demandées
+      if (includeStats) {
+        const statsData = await getGlobalStats(hotelId)
+        setStats(statsData)
       }
     } catch (error) {
       console.error('Erreur chargement données interventions:', error)

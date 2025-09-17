@@ -61,7 +61,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 export function QuickActionButtons({
   currentStatus,
   onStatusChange,
-  canCancel = false,
+  // canCancel = false,
   isLoading = false,
   className
 }: QuickActionButtonsProps) {
