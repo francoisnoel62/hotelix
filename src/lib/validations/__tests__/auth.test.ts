@@ -3,8 +3,8 @@ import {
   validateEmail,
   validatePassword,
   validateHotelId,
-  validateRegisterForm,
-  validateLoginForm
+  validateRegisterForm
+  // validateLoginForm
 } from '../auth'
 
 describe('Auth Validation Functions', () => {

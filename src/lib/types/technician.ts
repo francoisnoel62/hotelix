@@ -1,4 +1,4 @@
-import { User, Role } from '@prisma/client'
+import { Role } from '@prisma/client'
 import { InterventionWithRelations } from './intervention'
 
 export interface TechnicianWithDetails {

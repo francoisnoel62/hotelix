@@ -331,7 +331,7 @@ export default function TechnicianDetailPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                     <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune intervention</h3>
-                    <p className="mt-1 text-sm text-gray-500">Ce technicien n'a pas encore d'interventions assignées.</p>
+                    <p className="mt-1 text-sm text-gray-500">Ce technicien n&apos;a pas encore d&apos;interventions assignées.</p>
                   </div>
                 )}
               </div>

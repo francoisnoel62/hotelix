@@ -25,7 +25,7 @@ describe('Database Relationships', () => {
       }
     })
 
-    const user2 = await testPrisma.user.create({
+    await testPrisma.user.create({
       data: {
         email: 'user2@hotel2.com',
         password: 'hashed',
@@ -378,7 +378,7 @@ describe('Database Relationships', () => {
     })
 
     // Create multiple interventions
-    const intervention1 = await testPrisma.intervention.create({
+    await testPrisma.intervention.create({
       data: {
         titre: 'Kitchen equipment issue',
         type: TypeIntervention.ELECTRICITE,
@@ -392,7 +392,7 @@ describe('Database Relationships', () => {
       }
     })
 
-    const intervention2 = await testPrisma.intervention.create({
+    await testPrisma.intervention.create({
       data: {
         titre: 'Table cleaning',
         type: TypeIntervention.NETTOYAGE,

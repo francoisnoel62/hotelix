@@ -29,9 +29,7 @@ export interface RegisterFormData extends AuthFormData {
   specialite?: string
 }
 
-export interface LoginFormData extends AuthFormData {
-  // This interface extends AuthFormData without additional properties
-}
+export type LoginFormData = AuthFormData
 
 // Types pour les Server Actions (sans confirmPassword)
 export interface RegisterRequest {
@@ -43,9 +41,7 @@ export interface RegisterRequest {
   specialite?: string
 }
 
-export interface LoginRequest extends AuthFormData {
-  // This interface extends AuthFormData without additional properties
-}
+export type LoginRequest = AuthFormData
 
 export interface UserSession {
   id: number

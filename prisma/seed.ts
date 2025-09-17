@@ -13,7 +13,7 @@ async function main() {
   await prisma.hotel.deleteMany()
 
   // Créer les hôtels
-  const hotels = await prisma.hotel.createMany({
+  await prisma.hotel.createMany({
     data: [
       {
         nom: "Club Med Palmiye",

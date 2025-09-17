@@ -15,7 +15,7 @@ export default function TechniciensPage() {
   const {
     technicians,
     isLoading,
-    error,
+    // error,
     refresh
   } = useTechniciansData(user?.hotelId || 0)
 

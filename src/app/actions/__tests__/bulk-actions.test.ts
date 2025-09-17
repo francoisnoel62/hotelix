@@ -92,7 +92,7 @@ describe('Bulk Actions Server Actions', () => {
         data: {
           titre: 'Intervention Bulk 3',
           description: 'Test bulk 3',
-          type: TypeIntervention.MENAGE,
+          type: TypeIntervention.NETTOYAGE,
           priorite: PrioriteIntervention.BASSE,
           origine: OrigineIntervention.STAFF,
           statut: StatutIntervention.EN_ATTENTE,

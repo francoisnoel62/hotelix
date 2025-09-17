@@ -18,7 +18,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <Button asChild size="lg">
               <Link href="/auth">
-                Se connecter / S'inscrire
+                Se connecter / S&apos;inscrire
               </Link>
             </Button>
           </div>

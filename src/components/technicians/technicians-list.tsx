@@ -11,7 +11,7 @@ interface TechniciansListProps {
   onRefresh: () => void
 }
 
-export function TechniciansList({ technicians, user, onRefresh }: TechniciansListProps) {
+export function TechniciansList({ technicians }: TechniciansListProps) {
   const router = useRouter()
   const [filter, setFilter] = useState<TechnicianFilter>({
     search: '',
@@ -89,14 +89,14 @@ export function TechniciansList({ technicians, user, onRefresh }: TechniciansLis
             >
               <option value="ALL">Toutes les spécialités</option>
               {specialites.map(specialite => (
-                <option key={specialite} value={specialite}>{specialite}</option>
+                <option key={specialite} value={specialite || ''}>{specialite || 'Non spécifiée'}</option>
               ))}
             </select>
           </div>
           <div className="sm:w-auto">
             <select
               value={filter.statut}
-              onChange={(e) => setFilter(prev => ({ ...prev, statut: e.target.value as any }))}
+              onChange={(e) => setFilter(prev => ({ ...prev, statut: e.target.value as 'ALL' | 'DISPONIBLE' | 'OCCUPE' | 'HORS_LIGNE' }))}
               className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="ALL">Tous les statuts</option>

@@ -179,7 +179,7 @@ export function TechnicianChat({ currentUser, technician }: TechnicianChatProps)
               </div>
 
               {/* Messages du jour */}
-              {dayMessages.map((message, index) => (
+              {dayMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex mb-4 ${message.direction === 'sent' ? 'justify-end' : 'justify-start'}`}

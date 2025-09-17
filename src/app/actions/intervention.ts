@@ -229,8 +229,8 @@ export async function getInterventions(
 
     // Si les stats sont demandées, les ajouter à la réponse
     if (includeStats) {
-      const { getGlobalStats } = await import("@/app/actions/stats");
-      const stats = await getGlobalStats(hotelId);
+      // const { getGlobalStats } = await import("@/app/actions/stats");
+      // const stats = await getGlobalStats(hotelId);
       // Ajouter les stats au contexte de retour (pattern à définir)
     }
 
